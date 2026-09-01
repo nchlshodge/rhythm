@@ -112,6 +112,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .prog-outer{flex:1;height:4px;background:var(--surface3);border-radius:3px;margin:0 10px;overflow:hidden;}
 .prog-inner{height:100%;background:var(--green);border-radius:3px;transition:width 0.6s ease;}
 .day-30{font-size:11px;color:var(--text3);}
+.tree-label{display:flex;align-items:center;gap:6px;padding:10px 14px 0 14px;font-size:13px;font-weight:600;color:var(--text);}
+#treeCanvas{cursor:pointer;}
+.grove-scroll{display:flex;gap:10px;overflow-x:auto;padding:0 16px 14px;}
+.grove-item{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;width:72px;}
+.grove-item canvas{border-radius:12px;background:var(--surface);border:1px solid var(--border);width:72px;height:72px;}
+.grove-item span{font-size:10px;color:var(--text3);text-align:center;line-height:1.3;}
 
 /* PRACTICES */
 .practice-list{display:flex;flex-direction:column;gap:8px;padding:0 16px;}
@@ -321,6 +327,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       </div>
 
       <div class="scene-wrap">
+        <div class="tree-label" id="treeTypeLabel"></div>
         <canvas id="treeCanvas" width="800" height="440"></canvas>
         <div class="scene-actions">
           <button class="scene-btn" id="btnWater" onclick="gardenAction('water')">💧 Water</button>
@@ -332,6 +339,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
           <div class="prog-outer"><div class="prog-inner" id="treeProgBar" style="width:3%"></div></div>
           <span class="day-30">Day 30</span>
         </div>
+      </div>
+
+      <div id="groveWrap" style="display:none">
+        <div class="sect" style="margin-top:0">Your grove</div>
+        <div class="grove-scroll" id="groveScroll"></div>
       </div>
 
       <div id="readingPlanCard" style="margin:0 16px 14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem 1.15rem;cursor:pointer;" onclick="openFocus(PRACTICES[0])">
@@ -639,7 +651,14 @@ function renderDevotional(){
 // ─── STATE ───────────────────────────────────────────────────────────────────
 function loadState(){
   const s=localStorage.getItem('rhythm_v1');
-  if(s) return JSON.parse(s);
+  if(s){
+    const parsed=JSON.parse(s);
+    if(!parsed.gardenTrees) parsed.gardenTrees=[];
+    if(!parsed.weeds) parsed.weeds=[];
+    if(parsed.lastWeedCheck===undefined) parsed.lastWeedCheck=null;
+    if(!parsed.treeMonthRecorded) parsed.treeMonthRecorded=1;
+    return parsed;
+  }
   return{
     onboarded:false,focus:null,startDate:null,currentDay:1,
     streak:0,sabbathRests:0,streakTowardSabbath:0,
@@ -648,6 +667,7 @@ function loadState(){
     sheep:0,actsOfLove:0,
     gardenCooldowns:{},gardenWater:0,gardenSun:0,gardenPray:0,
     firstDayDone:false,
+    gardenTrees:[],weeds:[],lastWeedCheck:null,treeMonthRecorded:1,
   };
 }
 let S=loadState();
@@ -717,17 +737,30 @@ function skipCinematic(){
 }
 
 // ─── TREE CANVAS ─────────────────────────────────────────────────────────────
-let treeAnimReq=null,treeImgs=[],treeImgsLoaded=false;
-let waterDrops=[],sunRays=0,praySparkles=[];
+let treeAnimReq=null;
+let waterDrops=[],sunRays=0,praySparkles=[],weedBursts=[];
 
-function loadTreeImages(srcs,onLoaded){
-  let loaded=0;
-  treeImgs=srcs.map(src=>{
-    const img=new Image();
-    img.onload=()=>{loaded++;if(loaded===srcs.length){treeImgsLoaded=true;if(onLoaded)onLoaded();}};
-    img.src=src;
-    return img;
-  });
+// One tree type per 30-day cycle, cycling through this list so every month looks different.
+const TREE_TYPES=[
+  {name:'Olive Tree',   emoji:'🫒', canopy:'#7A8B5A', canopy2:'#94A66E', trunk:'#7A6248', fruit:'#3B3B2E'},
+  {name:'Fig Tree',     emoji:'🍈', canopy:'#5C8A4E', canopy2:'#79A863', trunk:'#6B5138', fruit:'#7C4A8C'},
+  {name:'Vine',         emoji:'🍇', canopy:'#6B8E4E', canopy2:'#87A968', trunk:'#5A4632', fruit:'#5B3E7A'},
+  {name:'Cedar',        emoji:'🌲', canopy:'#3F6B4A', canopy2:'#568563', trunk:'#5A4230', fruit:'#8B6B3D'},
+  {name:'Pomegranate Tree', emoji:'🍎', canopy:'#5E8850', canopy2:'#79A968', trunk:'#6B4E38', fruit:'#B23A48'},
+  {name:'Almond Tree',  emoji:'🌸', canopy:'#8FAE7A', canopy2:'#A9C48F', trunk:'#7A6048', fruit:'#F0C8D8'},
+  {name:'Palm Tree',    emoji:'🌴', canopy:'#5A9A5E', canopy2:'#78B87C', trunk:'#9A7A50', fruit:'#C89A3C'},
+  {name:'Apple Tree',   emoji:'🍏', canopy:'#5E9456', canopy2:'#7BAE70', trunk:'#6B5138', fruit:'#C4423C'},
+  {name:'Cypress',      emoji:'🌳', canopy:'#39604A', canopy2:'#4F7A60', trunk:'#57402C', fruit:'#6E5A3E'},
+  {name:'Mustard Tree', emoji:'🌼', canopy:'#8A9A4E', canopy2:'#A6B868', trunk:'#7A6248', fruit:'#E8D24A'},
+  {name:'Sycamore',     emoji:'🍃', canopy:'#4E7A5E', canopy2:'#6B9878', trunk:'#63492E', fruit:'#8FA85E'},
+  {name:'Terebinth',    emoji:'🌿', canopy:'#5A7A48', canopy2:'#7A9A62', trunk:'#6E5238', fruit:'#9A7A48'},
+];
+function getTreeType(monthNum){ return TREE_TYPES[(Math.max(1,monthNum)-1)%TREE_TYPES.length]; }
+
+function getTreeDayInMonth(){
+  if(!S.startDate) return 1;
+  const days=Math.floor((new Date(today())-new Date(S.startDate))/86400000);
+  return (days%30)+1;
 }
 
 function getTreeStage(day){
@@ -736,6 +769,165 @@ function getTreeStage(day){
   if(day<=15) return 2;
   if(day<=23) return 3;
   return 4;
+}
+
+// ─── MONTHLY ROLLOVER ─────────────────────────────────────────────────────────
+function checkTreeMonthRollover(){
+  const cur=getMonthsSinceStart();
+  if(!S.treeMonthRecorded) S.treeMonthRecorded=1;
+  let changed=false;
+  while(S.treeMonthRecorded<cur){
+    const t=getTreeType(S.treeMonthRecorded);
+    S.gardenTrees.push({month:S.treeMonthRecorded,name:t.name,emoji:t.emoji});
+    S.treeMonthRecorded++;
+    S.weeds=[];
+    changed=true;
+  }
+  if(changed)saveState();
+}
+
+// ─── WEEDS ────────────────────────────────────────────────────────────────────
+function spawnWeed(){
+  if(S.weeds.length>=4) return;
+  S.weeds.push({id:Date.now()+Math.random(),xf:0.14+Math.random()*0.72,yf:-0.03+Math.random()*0.05});
+}
+function maybeSpawnWeed(){
+  const t=today();
+  if(S.lastWeedCheck===t) return;
+  S.lastWeedCheck=t;
+  const y=new Date();y.setDate(y.getDate()-1);
+  const yStr=y.toISOString().slice(0,10);
+  const missedYesterday=!!S.startDate&&yStr>=S.startDate&&!S.completedDays[yStr];
+  const chance=missedYesterday?0.65:0.15;
+  if(Math.random()<chance) spawnWeed();
+  saveState();
+}
+function removeWeedAt(index){
+  const w=S.weeds[index];
+  if(!w) return;
+  S.weeds.splice(index,1);
+  saveState();
+  const cvs=document.getElementById('treeCanvas');
+  const W=cvs.width,H=cvs.height,gndY=H*0.73;
+  for(let i=0;i<10;i++){
+    weedBursts.push({x:W*w.xf,y:gndY+H*w.yf,vy:-1-Math.random()*1.5,vx:(Math.random()-0.5)*1.5,r:2+Math.random()*2,life:26+Math.random()*14});
+  }
+  showToast('🌿 Weeded!');
+}
+function onTreeCanvasClick(e){
+  const cvs=document.getElementById('treeCanvas');
+  const rect=cvs.getBoundingClientRect();
+  const scaleX=cvs.width/rect.width,scaleY=cvs.height/rect.height;
+  const x=(e.clientX-rect.left)*scaleX,y=(e.clientY-rect.top)*scaleY;
+  const W=cvs.width,H=cvs.height,gndY=H*0.73;
+  for(let i=S.weeds.length-1;i>=0;i--){
+    const w=S.weeds[i];
+    const wx=W*w.xf,wy=gndY+H*w.yf;
+    const dx=x-wx,dy=y-wy;
+    if(dx*dx+dy*dy<(W*0.05)*(W*0.05)){ removeWeedAt(i); return; }
+  }
+}
+let treeClickBound=false;
+function bindTreeClick(){
+  if(treeClickBound) return;
+  const cvs=document.getElementById('treeCanvas');
+  if(!cvs) return;
+  cvs.addEventListener('click',onTreeCanvasClick);
+  treeClickBound=true;
+}
+function drawWeeds(ctx,W,H,gndY){
+  const t=performance.now()/1000;
+  S.weeds.forEach((w,i)=>{
+    const x=W*w.xf,y=gndY+H*w.yf;
+    const sway=Math.sin(t*1.4+i)*3;
+    ctx.strokeStyle='#5c7a3a';ctx.lineWidth=Math.max(1.5,W*0.0025);
+    [-1,0,1].forEach(b=>{
+      ctx.beginPath();
+      ctx.moveTo(x+b*W*0.006,y);
+      ctx.quadraticCurveTo(x+b*W*0.006+sway*0.5,y-W*0.02,x+b*W*0.01+sway,y-W*0.035);
+      ctx.stroke();
+    });
+  });
+}
+function drawWeedBursts(ctx){
+  weedBursts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life--;});
+  weedBursts=weedBursts.filter(p=>p.life>0);
+  weedBursts.forEach(p=>{
+    const a=Math.max(0,p.life/40);
+    ctx.fillStyle=`rgba(120,180,90,${a})`;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r*a,0,Math.PI*2);ctx.fill();
+  });
+}
+
+// ─── PROCEDURAL TREE ART ──────────────────────────────────────────────────────
+function drawProceduralTree(ctx,cx,gndY,size,type,stage){
+  if(stage<=0){
+    ctx.strokeStyle=type.canopy2;ctx.lineWidth=Math.max(2,size*0.012);
+    ctx.beginPath();ctx.moveTo(cx,gndY);ctx.lineTo(cx,gndY-size*0.07);ctx.stroke();
+    ctx.fillStyle=type.canopy2;
+    ctx.beginPath();ctx.ellipse(cx-size*0.02,gndY-size*0.08,size*0.025,size*0.015,Math.PI/4,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(cx+size*0.02,gndY-size*0.08,size*0.025,size*0.015,-Math.PI/4,0,Math.PI*2);ctx.fill();
+    return;
+  }
+  const trunkH=size*(0.14+0.05*stage);
+  const trunkW=size*0.05;
+  ctx.fillStyle=type.trunk;
+  ctx.fillRect(cx-trunkW/2,gndY-trunkH,trunkW,trunkH);
+  const canopyR=size*(0.09+0.055*stage);
+  const canopyY=gndY-trunkH-canopyR*0.55;
+  const blobs=stage+2;
+  ctx.fillStyle=type.canopy;
+  ctx.beginPath();ctx.arc(cx,canopyY,canopyR,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=type.canopy2;
+  for(let i=0;i<blobs;i++){
+    const a=(i/blobs)*Math.PI*2;
+    const bx=cx+Math.cos(a)*canopyR*0.6;
+    const by=canopyY+Math.sin(a)*canopyR*0.5;
+    ctx.beginPath();ctx.arc(bx,by,canopyR*0.45,0,Math.PI*2);ctx.fill();
+  }
+  if(stage>=4){
+    ctx.fillStyle=type.fruit;
+    for(let i=0;i<6;i++){
+      const a=(i/6)*Math.PI*2+0.4;
+      const fx=cx+Math.cos(a)*canopyR*0.7;
+      const fy=canopyY+Math.sin(a)*canopyR*0.6;
+      ctx.beginPath();ctx.arc(fx,fy,size*0.018,0,Math.PI*2);ctx.fill();
+    }
+  }
+}
+function stageDataURL(type,stage){
+  const c=document.createElement('canvas');
+  c.width=400;c.height=400;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#eaf2ec';
+  ctx.beginPath();ctx.arc(200,200,190,0,Math.PI*2);ctx.fill();
+  drawProceduralTree(ctx,200,330,300,type,stage);
+  return c.toDataURL();
+}
+function buildCinematicStages(type){
+  return [0,1,2,3,4].map(s=>({src:stageDataURL(type,s)}));
+}
+
+// ─── GROVE (past months) ──────────────────────────────────────────────────────
+function renderGrove(){
+  const wrap=document.getElementById('groveWrap');
+  const scroll=document.getElementById('groveScroll');
+  if(!S.gardenTrees.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  scroll.innerHTML='';
+  S.gardenTrees.forEach(g=>{
+    const type=getTreeType(g.month);
+    const item=document.createElement('div');
+    item.className='grove-item';
+    const c=document.createElement('canvas');
+    c.width=144;c.height=144;
+    const gctx=c.getContext('2d');
+    drawProceduralTree(gctx,72,122,120,type,4);
+    const label=document.createElement('span');
+    label.textContent=type.emoji+' Month '+g.month;
+    item.appendChild(c);item.appendChild(label);
+    scroll.appendChild(item);
+  });
 }
 
 function drawTreeScene(){
@@ -802,13 +994,15 @@ function drawTreeScene(){
     ctx.beginPath();ctx.moveTo(p.x,p.y-4);ctx.lineTo(p.x,p.y+4);ctx.stroke();
   });
 
-  // TREE IMAGE
-  const day=S.currentDay||1;
+  // TREE
+  const day=getTreeDayInMonth();
   const stage=getTreeStage(day);
-  if(treeImgsLoaded&&treeImgs[stage]&&treeImgs[stage].complete){
-    const size=W*0.66;
-    ctx.drawImage(treeImgs[stage],W/2-size/2,gndY-size*0.82,size,size);
-  }
+  const type=getTreeType(getMonthsSinceStart());
+  drawProceduralTree(ctx,W/2,gndY,W*0.66,type,stage);
+
+  // WEEDS
+  drawWeeds(ctx,W,H,gndY);
+  drawWeedBursts(ctx);
 
   treeAnimReq=requestAnimationFrame(drawTreeScene);
 }
@@ -820,8 +1014,11 @@ function renderTree(){
   const w=cvs.offsetWidth;
   cvs.width=w*devicePixelRatio;cvs.height=Math.round(w*0.55)*devicePixelRatio;
   cvs.style.height=Math.round(w*0.55)+'px';
+  bindTreeClick();
   drawTreeScene();
-  const day=S.currentDay||1;
+  const day=getTreeDayInMonth();
+  const type=getTreeType(getMonthsSinceStart());
+  document.getElementById('treeTypeLabel').textContent=type.emoji+' '+type.name;
   document.getElementById('treeDayLabel').textContent='Day '+day;
   document.getElementById('treeProgBar').style.width=Math.round((day-1)/29*100)+'%';
 }
@@ -1068,13 +1265,15 @@ function updateProgress(){
       }
       if(!S.firstDayDone){
         S.firstDayDone=true;saveState();
-        setTimeout(()=>playCinematic(treeImgs,()=>{renderTree();showToast('🌱 Your tree is planted!');}),400);
+        const startType=getTreeType(getMonthsSinceStart());
+        setTimeout(()=>playCinematic(buildCinematicStages(startType),()=>{renderTree();showToast('🌱 Your tree is planted!');}),400);
       } else {
         showToast('🌿 Day complete! Your tree is growing.');
       }
       saveState();renderSabbathCard();updateHeader();
-      document.getElementById('treeDayLabel').textContent='Day '+(S.currentDay||1);
-      document.getElementById('treeProgBar').style.width=Math.round(((S.currentDay||1)-1)/29*100)+'%';
+      const dayInMonth=getTreeDayInMonth();
+      document.getElementById('treeDayLabel').textContent='Day '+dayInMonth;
+      document.getElementById('treeProgBar').style.width=Math.round((dayInMonth-1)/29*100)+'%';
     }
   }
 }
@@ -1281,7 +1480,9 @@ function initApp(){
   renderReflections();
   renderChallenges();
   initSheep();
-  // Tree images are placeholders — app works with canvas background until images loaded
+  checkTreeMonthRollover();
+  maybeSpawnWeed();
+  renderGrove();
   renderTree();
   renderWeek();
 }
