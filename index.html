@@ -1461,7 +1461,7 @@ function showToast(msg){
 function recalcDay(){
   if(!S.startDate)return;
   const diff=Math.floor((new Date(today())-new Date(S.startDate))/86400000);
-  S.currentDay=Math.min(diff+1,30);
+  S.currentDay=Math.min(diff+1,365);
 }
 
 function initApp(){
