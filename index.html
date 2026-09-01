@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Daily rhythms of Scripture, prayer, and reflection to help you grow like a tree and love like a shepherd.">
+<meta name="theme-color" content="#2E5239">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<title>Rhythm</title>
+<style>
+:root{
+  --bg:#f4f1ea;--surface:#ffffff;--surface2:#ebe6db;--surface3:#e0d9cc;
+  --text:#1a1814;--text2:#6a6356;--text3:#a09880;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
+  --green:#4a7c59;--green2:#3a6147;--green-bg:#eaf2ec;--green-text:#2a5035;
+  --gold:#9a7420;--gold-bg:#fdf5e0;--gold-text:#7a5600;
+  --sky:#4a6fa8;--sky-bg:#eef2fb;--sky-text:#2a4870;
+  --radius:10px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--serif:Georgia,serif;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#131210;--surface:#1e1c18;--surface2:#272420;--surface3:#302d28;
+    --text:#ede9e0;--text2:#a09880;--text3:#6b6558;
+    --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+    --green:#6aab7a;--green2:#7dc08e;--green-bg:#142018;--green-text:#8fd4a0;
+    --gold:#d4a830;--gold-bg:#201800;--gold-text:#f0c050;
+    --sky:#7aa4d8;--sky-bg:#0e1a2e;--sky-text:#9ec0f0;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;}
+.app{max-width:430px;margin:0 auto;padding:0 0 5rem;}
+
+/* ONBOARDING */
+.onboard{max-width:430px;margin:0 auto;padding:2.5rem 1.5rem;}
+.ob-logo{text-align:center;margin-bottom:2.5rem;}
+.ob-logo .name{font-family:var(--serif);font-size:36px;font-weight:700;letter-spacing:-0.02em;color:var(--green);}
+.ob-logo .tag{font-size:13px;color:var(--text3);margin-top:6px;font-style:italic;}
+.ob-step{display:none;}
+.ob-step.active{display:block;}
+.ob-step h2{font-size:21px;font-weight:600;margin-bottom:10px;line-height:1.3;}
+.ob-step p{font-size:14px;color:var(--text2);line-height:1.75;margin-bottom:1.1rem;}
+.ob-two-worlds{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:1.25rem 0;}
+.world-card{background:var(--surface);border:1.5px solid var(--border2);border-radius:12px;padding:1.1rem;text-align:center;}
+.world-card .wc-icon{font-size:32px;margin-bottom:8px;}
+.world-card .wc-name{font-size:15px;font-weight:600;margin-bottom:4px;}
+.world-card .wc-desc{font-size:12px;color:var(--text3);line-height:1.5;}
+.habit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem;}
+.habit-card{border:1.5px solid var(--border2);border-radius:var(--radius);padding:1rem;cursor:pointer;transition:all 0.15s;background:var(--surface);}
+.habit-card:hover{border-color:var(--green);}
+.habit-card.selected{border-color:var(--green);background:var(--green-bg);}
+.habit-card .hc-icon{font-size:22px;margin-bottom:6px;}
+.habit-card .hc-name{font-size:14px;font-weight:600;}
+.habit-card .hc-desc{font-size:12px;color:var(--text3);margin-top:3px;line-height:1.4;}
+.btn-primary{width:100%;padding:14px;background:var(--green);border:none;border-radius:var(--radius);color:white;font-size:15px;font-weight:600;cursor:pointer;}
+.btn-primary:hover{background:var(--green2);}
+.btn-primary:disabled{opacity:0.4;cursor:default;}
+.btn-secondary{width:100%;padding:12px;border:1.5px solid var(--border2);border-radius:var(--radius);background:transparent;color:var(--text2);font-size:14px;cursor:pointer;margin-top:8px;}
+
+/* TOP BAR */
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 0;}
+.app-name{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--green);letter-spacing:-0.01em;}
+.top-pills{display:flex;gap:8px;align-items:center;}
+.pill{display:flex;align-items:center;gap:4px;padding:5px 11px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;}
+.pill-gold{background:var(--gold-bg);color:var(--gold-text);border:1px solid rgba(154,116,32,0.2);}
+.pill-streak{background:var(--surface2);color:var(--text2);}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:50;}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0 14px;border:none;background:transparent;font-size:10px;font-weight:500;color:var(--text3);cursor:pointer;transition:color 0.15s;}
+.nav-btn.active{color:var(--green);}
+.nav-btn .nav-icon{font-size:22px;line-height:1;}
+
+/* SECTION LABEL */
+.sect{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin:1.1rem 18px 0.55rem;}
+
+/* VERSE CARD */
+.verse-card{margin:0 16px 14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.25rem;border-left:3px solid var(--green);}
+.verse-text{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--text2);line-height:1.75;}
+.verse-ref{font-size:11px;color:var(--text3);margin-top:5px;}
+
+.devo-card{margin:0 16px 14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.25rem;}
+.devo-label{font-size:11px;font-weight:600;color:var(--green-text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;}
+.devo-body{font-size:13px;color:var(--text2);line-height:1.75;}
+.devo-deeper{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.devo-deeper-label{font-size:11px;font-weight:600;color:var(--gold-text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;}
+.devo-deeper-text{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text2);line-height:1.65;}
+.devo-memory{margin-top:12px;padding:0.7rem 0.85rem;background:var(--gold-bg);border-radius:8px;font-size:12.5px;color:var(--gold-text);line-height:1.6;}
+
+.promo-card{margin:0 16px 14px;display:flex;flex-direction:column;gap:8px;}
+.promo-link{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.9rem 1rem;text-decoration:none;color:var(--text);transition:border-color 0.15s;}
+.promo-link:hover{border-color:var(--green);}
+.promo-icon{font-size:20px;flex-shrink:0;}
+.promo-text{flex:1;display:flex;flex-direction:column;min-width:0;}
+.promo-name{font-size:14px;font-weight:600;color:var(--text);}
+.promo-desc{font-size:12px;color:var(--text3);margin-top:1px;}
+.promo-arrow{color:var(--text3);font-size:14px;flex-shrink:0;}
+
+/* GARDEN — TREE */
+.scene-wrap{margin:0 16px 10px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+#treeCanvas{display:block;width:100%;}
+.scene-actions{display:flex;gap:8px;padding:10px 12px 12px;}
+.scene-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:10px 6px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--surface2);font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;transition:all 0.15s;position:relative;overflow:hidden;}
+.scene-btn:hover{background:var(--green-bg);border-color:var(--green);color:var(--green-text);}
+.scene-btn:active{transform:scale(0.97);}
+.scene-btn.cooling{opacity:0.5;cursor:not-allowed;}
+.scene-btn.cooling:hover{background:var(--surface2);border-color:var(--border2);color:var(--text2);}
+.scene-info{display:flex;align-items:center;justify-content:space-between;padding:0 14px 12px;}
+.day-badge{font-size:12px;font-weight:600;color:var(--green-text);}
+.prog-outer{flex:1;height:4px;background:var(--surface3);border-radius:3px;margin:0 10px;overflow:hidden;}
+.prog-inner{height:100%;background:var(--green);border-radius:3px;transition:width 0.6s ease;}
+.day-30{font-size:11px;color:var(--text3);}
+
+/* PRACTICES */
+.practice-list{display:flex;flex-direction:column;gap:8px;padding:0 16px;}
+.p-item{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0.85rem 1rem;cursor:pointer;transition:all 0.15s;}
+.p-item:hover{border-color:var(--green);transform:translateX(2px);}
+.p-item.done{background:var(--green-bg);border-color:rgba(74,124,89,0.3);}
+.p-check{width:26px;height:26px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;transition:all 0.2s;}
+.p-item.done .p-check{background:var(--green);border-color:var(--green);color:white;}
+.p-icon{font-size:17px;width:20px;text-align:center;flex-shrink:0;}
+.p-text{flex:1;}
+.p-name{font-size:14px;font-weight:500;}
+.p-item.done .p-name{color:var(--green-text);}
+.p-desc{font-size:12px;color:var(--text3);margin-top:2px;}
+.prog-wrap{padding:10px 16px 0;}
+.prog-track{background:var(--surface2);border-radius:4px;height:5px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--green);border-radius:4px;transition:width 0.5s ease;}
+.prog-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:4px;}
+
+/* FOCUS PANEL */
+.focus-panel{display:none;margin:0 16px 14px;background:var(--surface);border:1.5px solid var(--green);border-radius:12px;padding:1.4rem;}
+.focus-panel.show{display:block;}
+.focus-title{font-size:16px;font-weight:600;margin-bottom:0.7rem;}
+.focus-body{font-size:14px;color:var(--text2);line-height:1.8;}
+.focus-body .scripture{font-family:var(--serif);font-style:italic;display:block;margin:0.8rem 0;border-left:2px solid var(--green);padding-left:0.8rem;color:var(--text);}
+.timer{text-align:center;font-size:32px;font-weight:700;color:var(--green);letter-spacing:0.04em;margin:1rem 0 0.5rem;font-variant-numeric:tabular-nums;}
+.timer-btns{display:flex;justify-content:center;gap:8px;margin-bottom:0.75rem;}
+.t-btn{padding:7px 18px;border:1px solid var(--border2);border-radius:var(--radius);background:transparent;color:var(--text2);font-size:13px;cursor:pointer;}
+.focus-actions{display:flex;gap:8px;margin-top:1rem;}
+.btn-done{flex:1;padding:11px;background:var(--green);border:none;border-radius:var(--radius);color:white;font-size:14px;font-weight:600;cursor:pointer;}
+.btn-close{padding:11px 14px;border:1px solid var(--border2);border-radius:var(--radius);background:transparent;color:var(--text2);font-size:14px;cursor:pointer;}
+
+/* PASTURE */
+#pastureCanvas{display:block;width:100%;}
+.pasture-stats{display:flex;gap:8px;padding:0 16px 14px;}
+.pstat{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0.8rem;text-align:center;}
+.pstat-num{font-size:22px;font-weight:700;color:var(--text);}
+.pstat-lbl{font-size:11px;color:var(--text3);margin-top:2px;}
+
+/* SABBATH TAB */
+.sab-card{margin:0 16px 12px;background:var(--gold-bg);border:1px solid rgba(154,116,32,0.18);border-radius:12px;padding:1rem 1.25rem;}
+.sab-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;}
+.sab-title{font-size:14px;font-weight:600;color:var(--gold-text);}
+.sab-dots{display:flex;gap:6px;}
+.sab-dot{width:22px;height:22px;border-radius:50%;border:1.5px solid rgba(154,116,32,0.3);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--gold-text);}
+.sab-dot.filled{background:var(--gold);border-color:var(--gold);color:white;}
+.sab-body{font-size:12px;color:var(--gold-text);line-height:1.6;opacity:0.85;}
+.sab-progress{display:flex;align-items:center;gap:8px;margin-top:0.65rem;}
+.sab-streak-dots{display:flex;gap:4px;}
+.sab-streak-dot{width:12px;height:12px;border-radius:50%;background:var(--surface3);border:1px solid var(--border2);}
+.sab-streak-dot.lit{background:var(--green);border-color:var(--green);}
+.sab-streak-lbl{font-size:11px;color:var(--gold-text);opacity:0.8;}
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:0 16px 14px;}
+.day-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.day-lbl{font-size:10px;color:var(--text3);font-weight:500;}
+.day-dot{width:32px;height:32px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);}
+.day-dot.full{background:var(--green);border-color:var(--green);color:white;font-weight:600;}
+.day-dot.partial{background:var(--green-bg);border-color:rgba(74,124,89,0.3);color:var(--green-text);}
+.day-dot.today{border:2px solid var(--green);color:var(--green);font-weight:600;}
+.stats-row{display:flex;gap:8px;padding:0 16px 14px;}
+.stat-box{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0.8rem;text-align:center;}
+.stat-num{font-size:22px;font-weight:700;}
+.stat-lbl{font-size:11px;color:var(--text3);margin-top:2px;}
+
+/* CHALLENGES */
+.ch-card{margin:0 16px 10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.25rem;}
+.ch-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.ch-name{font-size:15px;font-weight:600;}
+.ch-reward{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
+.ch-reward.rest{background:var(--gold-bg);color:var(--gold-text);border:1px solid rgba(154,116,32,0.2);}
+.ch-reward.sheep{background:var(--sky-bg);color:var(--sky-text);border:1px solid rgba(74,111,168,0.2);}
+.ch-desc{font-size:13px;color:var(--text2);line-height:1.65;margin-top:6px;}
+.ch-scripture{font-family:var(--serif);font-style:italic;font-size:12px;color:var(--text3);margin-top:7px;line-height:1.5;}
+.ch-prog{margin-top:9px;}
+.ch-track{background:var(--surface2);border-radius:3px;height:4px;overflow:hidden;margin-top:3px;}
+.ch-fill{height:100%;background:var(--sky);border-radius:3px;transition:width 0.5s;}
+.ch-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:3px;}
+.ch-btn{margin-top:9px;width:100%;padding:9px;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;}
+.ch-btn.earn{background:var(--gold);color:white;}
+.ch-btn.earn-sheep{background:var(--sky);color:white;}
+.ch-btn.todo{background:var(--surface2);color:var(--text3);}
+.ch-btn.claimed{background:var(--surface2);color:var(--text3);cursor:default;}
+
+/* REFLECT */
+.reflect-card{margin:0 16px 12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;}
+.reflect-prompt{font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:0.85rem;}
+.reflect-area{width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:0.85rem;font-size:14px;font-family:var(--serif);line-height:1.7;resize:none;background:var(--surface2);color:var(--text);}
+.reflect-area:focus{outline:none;border-color:var(--green);}
+.reflect-area::placeholder{color:var(--text3);}
+.btn-save{width:100%;margin-top:0.75rem;padding:10px;border:1.5px solid var(--border2);border-radius:var(--radius);background:transparent;color:var(--text2);font-size:14px;cursor:pointer;font-weight:500;}
+.past-item{margin:0 16px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0.85rem 1rem;}
+.past-date{font-size:11px;color:var(--text3);margin-bottom:4px;}
+.past-text{font-size:14px;color:var(--text2);font-family:var(--serif);line-height:1.65;}
+.empty-state{text-align:center;padding:2rem 1rem;font-size:13px;color:var(--text3);}
+
+/* CINEMATIC */
+.cinematic{display:none;position:fixed;inset:0;background:#0a160a;z-index:200;flex-direction:column;align-items:center;justify-content:center;}
+.cinematic.show{display:flex;}
+.cin-img{max-width:88%;max-height:68vh;border-radius:16px;object-fit:contain;opacity:0;transition:opacity 0.7s;}
+.cin-img.visible{opacity:1;}
+.cin-caption{font-family:var(--serif);font-style:italic;font-size:18px;color:white;text-align:center;padding:0 2rem;margin-top:1.5rem;opacity:0;transition:opacity 0.6s;line-height:1.6;min-height:2.5rem;}
+.cin-caption.visible{opacity:1;}
+.cin-skip{position:absolute;bottom:28px;right:24px;background:rgba(255,255,255,0.15);border:none;color:white;padding:8px 16px;border-radius:20px;font-size:13px;cursor:pointer;}
+
+/* MODAL */
+.modal-back{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center;}
+.modal-back.show{display:flex;}
+.modal{background:var(--surface);border-radius:16px;padding:1.75rem;max-width:340px;width:90%;text-align:center;}
+.modal h3{font-size:18px;font-weight:600;margin-bottom:8px;}
+.modal p{font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:1.25rem;}
+.modal-btns{display:flex;flex-direction:column;gap:8px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:30px;font-size:13px;font-weight:500;opacity:0;transition:all 0.3s;pointer-events:none;z-index:300;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.tab-content{padding-top:12px;}
+.tab-content.hidden{display:none;}
+
+/* PARTICLE */
+@keyframes pop{0%{transform:scale(0) translate(0,0);opacity:1;}100%{transform:scale(1.4) translate(var(--tx),var(--ty));opacity:0;}}
+.particle{position:fixed;pointer-events:none;font-size:16px;animation:pop 0.85s ease-out forwards;z-index:400;}
+</style>
+</head>
+<body>
+
+<!-- ONBOARDING -->
+<div id="onboarding" class="onboard">
+  <div class="ob-logo">
+    <div class="name">Rhythm.</div>
+    <div class="tag">grow your soul · care for your flock</div>
+  </div>
+  <div class="ob-step active" id="ob1">
+    <h2>Two ways to grow.</h2>
+    <p>Rhythm is built around two living spaces — each one grows as you do.</p>
+    <div class="ob-two-worlds">
+      <div class="world-card">
+        <div class="wc-icon">🌳</div>
+        <div class="wc-name">Your Tree</div>
+        <div class="wc-desc">Daily practices grow your tree over 30 days — from seed to full fruit.</div>
+      </div>
+      <div class="world-card">
+        <div class="wc-icon">🐑</div>
+        <div class="wc-name">Your Pasture</div>
+        <div class="wc-desc">Acts of service and love bring sheep into your pasture.</div>
+      </div>
+    </div>
+    <p>The tree is your inner life. The pasture is your life with others. Both matter. Both need tending.</p>
+    <button class="btn-primary" onclick="obNext(2)">Continue →</button>
+  </div>
+  <div class="ob-step" id="ob2">
+    <h2>What do you want to grow in?</h2>
+    <p>Your focus shapes which practices we highlight each day.</p>
+    <div class="habit-grid" id="habitGrid">
+      <div class="habit-card" onclick="selectHabit('word')" data-habit="word"><div class="hc-icon">📖</div><div class="hc-name">God's Word</div><div class="hc-desc">Read deeper, more consistently</div></div>
+      <div class="habit-card" onclick="selectHabit('prayer')" data-habit="prayer"><div class="hc-icon">🙏</div><div class="hc-name">Prayer</div><div class="hc-desc">A richer, more honest prayer life</div></div>
+      <div class="habit-card" onclick="selectHabit('faith')" data-habit="faith"><div class="hc-icon">🌱</div><div class="hc-name">Living Faith</div><div class="hc-desc">Practice what I believe</div></div>
+      <div class="habit-card" onclick="selectHabit('stillness')" data-habit="stillness"><div class="hc-icon">🕊️</div><div class="hc-name">Stillness</div><div class="hc-desc">Quiet and rest in God</div></div>
+      <div class="habit-card" onclick="selectHabit('community')" data-habit="community"><div class="hc-icon">🤝</div><div class="hc-name">Community</div><div class="hc-desc">Love and serve others</div></div>
+      <div class="habit-card" onclick="selectHabit('all')" data-habit="all"><div class="hc-icon">✨</div><div class="hc-name">All of it</div><div class="hc-desc">A balanced daily rhythm</div></div>
+    </div>
+    <button class="btn-primary" id="ob2next" disabled onclick="obNext(3)">Continue →</button>
+  </div>
+  <div class="ob-step" id="ob3">
+    <h2>Rest is part of the rhythm.</h2>
+    <p>Every 6 days of faithful practice earns a <strong>Sabbath Rest</strong> — a free day that protects your streak. You can hold up to 3.</p>
+    <p>Special challenges earn extra Rests, and acts of love and service bring sheep into your pasture.</p>
+    <div style="background:var(--gold-bg);border:1px solid rgba(154,116,32,0.2);border-radius:var(--radius);padding:1rem;margin-bottom:1.25rem;">
+      <div style="font-size:13px;color:var(--gold-text);line-height:1.65;">☀️ <strong>Sabbath Rests</strong> aren't a loophole — they're a gift. Even God rested. Your rest is holy too.</div>
+    </div>
+    <button class="btn-primary" onclick="finishOnboarding()">Begin tending →</button>
+  </div>
+</div>
+
+<!-- CINEMATIC -->
+<div class="cinematic" id="cinematic">
+  <img class="cin-img" id="cinImg" src="" alt="">
+  <div class="cin-caption" id="cinCaption"></div>
+  <button class="cin-skip" onclick="skipCinematic()">Skip →</button>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none">
+  <div class="app">
+    <div class="top-bar">
+      <div class="app-name">Rhythm.</div>
+      <div class="top-pills">
+        <div class="pill pill-gold" onclick="showSabbathModal()">☀️ <span id="sabbathCount">0</span></div>
+        <div class="pill pill-streak">🔥 <span id="streakNum">0</span></div>
+      </div>
+    </div>
+
+    <!-- GROW TAB -->
+    <div id="tab-grow" class="tab-content">
+      <div class="verse-card" style="margin-top:14px">
+        <div class="verse-text" id="dailyVerse"></div>
+        <div class="verse-ref" id="dailyRef"></div>
+      </div>
+
+      <div class="devo-card" id="devoCard" style="display:none">
+        <div class="devo-label" id="devoLabel"></div>
+        <div class="devo-body" id="devoBody"></div>
+        <div class="devo-deeper" id="devoDeeperWrap" style="display:none">
+          <div class="devo-deeper-label">Going deeper</div>
+          <div class="devo-deeper-text" id="devoDeeperText"></div>
+        </div>
+        <div class="devo-memory" id="devoMemory" style="display:none"></div>
+      </div>
+
+      <div class="scene-wrap">
+        <canvas id="treeCanvas" width="800" height="440"></canvas>
+        <div class="scene-actions">
+          <button class="scene-btn" id="btnWater" onclick="gardenAction('water')">💧 Water</button>
+          <button class="scene-btn" id="btnSun" onclick="gardenAction('sun')">☀️ Sunshine</button>
+          <button class="scene-btn" id="btnPray" onclick="gardenAction('pray')">🙏 Pray</button>
+        </div>
+        <div class="scene-info">
+          <span class="day-badge" id="treeDayLabel">Day 1</span>
+          <div class="prog-outer"><div class="prog-inner" id="treeProgBar" style="width:3%"></div></div>
+          <span class="day-30">Day 30</span>
+        </div>
+      </div>
+
+      <div id="readingPlanCard" style="margin:0 16px 14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem 1.15rem;cursor:pointer;" onclick="openFocus(PRACTICES[0])">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:600;color:var(--text);">Today's reading</div>
+          <div id="planDayBadge" style="font-size:11px;font-weight:600;color:var(--green-text);background:var(--green-bg);padding:3px 9px;border-radius:20px;"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;" id="planCardRows"></div>
+        <div id="planTheme" style="font-size:12px;color:var(--text3);margin-top:8px;font-style:italic;font-family:var(--serif);line-height:1.5;"></div>
+      </div>
+
+      <div id="focusPanel" class="focus-panel">
+        <div class="focus-title" id="fpTitle"></div>
+        <div class="focus-body" id="fpBody"></div>
+        <div class="timer hidden" id="timerDisplay">5:00</div>
+        <div class="timer-btns hidden" id="timerControls">
+          <button class="t-btn" onclick="toggleTimer()" id="timerToggle">▶ Start</button>
+          <button class="t-btn" onclick="resetTimer()">↺ Reset</button>
+        </div>
+        <div class="focus-actions">
+          <button class="btn-done" onclick="markDone()">✓ Mark complete</button>
+          <button class="btn-close" onclick="closeFocus()">Close</button>
+        </div>
+      </div>
+
+      <div class="sect">Your practices</div>
+      <div class="practice-list" id="practiceList"></div>
+      <div class="prog-wrap">
+        <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+        <div class="prog-meta"><span id="progText">0 of 5 complete</span><span id="progPct">0%</span></div>
+      </div>
+    </div>
+
+    <!-- PASTURE TAB -->
+    <div id="tab-pasture" class="tab-content hidden">
+      <div class="scene-wrap" style="margin-top:14px">
+        <canvas id="pastureCanvas" width="800" height="500"></canvas>
+      </div>
+      <div class="pasture-stats">
+        <div class="pstat"><div class="pstat-num" id="sheepCount">0</div><div class="pstat-lbl">Sheep in flock</div></div>
+        <div class="pstat"><div class="pstat-num" id="challengesDone">0</div><div class="pstat-lbl">Acts of love</div></div>
+        <div class="pstat"><div class="pstat-num" id="streakNum2">0</div><div class="pstat-lbl">Day streak</div></div>
+      </div>
+      <div class="sect">Earn sheep through love</div>
+      <div id="pastureChList"></div>
+      <div style="padding:0 16px 8px;font-size:13px;color:var(--text3);line-height:1.6;font-style:italic;font-family:var(--serif);">"I am the good shepherd. I know my own and my own know me." — John 10:14</div>
+    </div>
+
+    <!-- SABBATH TAB -->
+    <div id="tab-sabbath" class="tab-content hidden">
+      <div class="sab-card" style="margin-top:14px">
+        <div class="sab-header">
+          <span class="sab-title">☀️ Sabbath Rests</span>
+          <div class="sab-dots" id="sabbathDots"></div>
+        </div>
+        <div class="sab-body" id="sabbathBody"></div>
+        <div class="sab-progress">
+          <div class="sab-streak-dots" id="sabStreakDots"></div>
+          <span class="sab-streak-lbl" id="sabStreakLbl"></span>
+        </div>
+      </div>
+      <div class="sect">This month</div>
+      <div class="week-grid" id="weekGrid"></div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-num" id="s1">0</div><div class="stat-lbl">Day streak</div></div>
+        <div class="stat-box"><div class="stat-num" id="s2">0</div><div class="stat-lbl">Days complete</div></div>
+        <div class="stat-box"><div class="stat-num" id="s3">0</div><div class="stat-lbl">Rests banked</div></div>
+      </div>
+      <div class="verse-card">
+        <div class="verse-text">"Let us not become weary in doing good, for at the proper time we will reap a harvest if we do not give up."</div>
+        <div class="verse-ref">— Galatians 6:9</div>
+      </div>
+      <div class="sect">Earn Sabbath Rests</div>
+      <div id="restChList"></div>
+    </div>
+
+    <!-- REFLECT TAB -->
+    <div id="tab-reflect" class="tab-content hidden">
+      <div class="sect" style="margin-top:14px">Today's reflection</div>
+      <div class="reflect-card">
+        <div class="reflect-prompt" id="reflectPrompt"></div>
+        <textarea class="reflect-area" rows="6" placeholder="Write freely — this is between you and God..." id="reflectArea"></textarea>
+        <button class="btn-save" onclick="saveReflect()">Save reflection</button>
+      </div>
+      <div class="sect" style="margin-top:1.25rem">Past reflections</div>
+      <div id="pastReflections"></div>
+
+      <div class="sect" style="margin-top:1.25rem">More ways to grow</div>
+      <div class="promo-card">
+        <a class="promo-link" href="https://nchlshodge.github.io/scripturescout/" target="_blank" rel="noopener">
+          <span class="promo-icon">📖</span>
+          <span class="promo-text"><span class="promo-name">Scripture Scout</span><span class="promo-desc">A Bible verse &amp; trivia game</span></span>
+          <span class="promo-arrow">→</span>
+        </a>
+        <a class="promo-link" href="https://nchlshodge.github.io/groundwork/" target="_blank" rel="noopener">
+          <span class="promo-icon">🙏</span>
+          <span class="promo-text"><span class="promo-name">Groundwork</span><span class="promo-desc">Guided prayer, pillar by pillar</span></span>
+          <span class="promo-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+  </div><!-- .app -->
+</div><!-- #mainApp -->
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav" id="bottomNav" style="display:none">
+  <button class="nav-btn active" onclick="switchTab('grow')" id="nav-grow">
+    <span class="nav-icon">🌳</span>Grow
+  </button>
+  <button class="nav-btn" onclick="switchTab('pasture')" id="nav-pasture">
+    <span class="nav-icon">🐑</span>Pasture
+  </button>
+  <button class="nav-btn" onclick="switchTab('sabbath')" id="nav-sabbath">
+    <span class="nav-icon">☀️</span>Sabbath
+  </button>
+  <button class="nav-btn" onclick="switchTab('reflect')" id="nav-reflect">
+    <span class="nav-icon">✍️</span>Reflect
+  </button>
+</div>
+
+<!-- SABBATH MODAL -->
+<div class="modal-back" id="sabbathModal">
+  <div class="modal">
+    <h3>☀️ Sabbath Rests</h3>
+    <p>You have <strong id="sabbathModalCount">0</strong> Rest(s) saved. Use one to protect your streak on a missed day.</p>
+    <div class="modal-btns">
+      <button class="btn-primary" onclick="useSabbathRest()" id="useSabbathBtn">Use a Rest</button>
+      <button class="btn-secondary" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── READING PLAN ────────────────────────────────────────────────────────────
+const READING_PLAN=[{"day":1,"nt":{"book":"Matthew","chapter":1},"ot":{"book":"Genesis","chapter":12},"ps":{"book":"Psalm","chapter":87},"theme":"The promised lineage begins"},{"day":2,"nt":{"book":"Matthew","chapter":2},"ot":{"book":"Numbers","chapter":24},"ps":{"book":"Psalm","chapter":72},"theme":"A star and a king foretold"},{"day":3,"nt":{"book":"Matthew","chapter":3},"ot":{"book":"Isaiah","chapter":40},"ps":{"book":"Psalm","chapter":29},"theme":"The voice in the wilderness"},{"day":4,"nt":{"book":"Matthew","chapter":4},"ot":{"book":"Deuteronomy","chapter":6},"ps":{"book":"Psalm","chapter":91},"theme":"Tested in the wilderness"},{"day":5,"nt":{"book":"Matthew","chapter":5},"ot":{"book":"Leviticus","chapter":19},"ps":{"book":"Psalm","chapter":119},"theme":"The law fulfilled and deepened"},{"day":6,"nt":{"book":"Matthew","chapter":6},"ot":{"book":"1 Kings","chapter":3},"ps":{"book":"Proverbs","chapter":3},"theme":"Prayer, fasting, and seeking God"},{"day":7,"nt":{"book":"Matthew","chapter":7},"ot":{"book":"Jeremiah","chapter":7},"ps":{"book":"Psalm","chapter":15},"theme":"Hearing and doing"},{"day":8,"nt":{"book":"Matthew","chapter":8},"ot":{"book":"2 Kings","chapter":5},"ps":{"book":"Psalm","chapter":103},"theme":"Healing and faith"},{"day":9,"nt":{"book":"Matthew","chapter":9},"ot":{"book":"Isaiah","chapter":35},"ps":{"book":"Psalm","chapter":30},"theme":"New life, forgiveness, restoration"},{"day":10,"nt":{"book":"Matthew","chapter":10},"ot":{"book":"Jeremiah","chapter":1},"ps":{"book":"Psalm","chapter":56},"theme":"Sent out, do not fear"},{"day":11,"nt":{"book":"Matthew","chapter":11},"ot":{"book":"Isaiah","chapter":61},"ps":{"book":"Psalm","chapter":22},"theme":"The kingdom and the humble"},{"day":12,"nt":{"book":"Matthew","chapter":12},"ot":{"book":"1 Samuel","chapter":21},"ps":{"book":"Psalm","chapter":62},"theme":"Lord of the Sabbath"},{"day":13,"nt":{"book":"Matthew","chapter":13},"ot":{"book":"Isaiah","chapter":6},"ps":{"book":"Psalm","chapter":78},"theme":"The mystery of the kingdom"},{"day":14,"nt":{"book":"Matthew","chapter":14},"ot":{"book":"Exodus","chapter":16},"ps":{"book":"Psalm","chapter":107},"theme":"Bread in the wilderness"},{"day":15,"nt":{"book":"Matthew","chapter":15},"ot":{"book":"Isaiah","chapter":29},"ps":{"book":"Psalm","chapter":51},"theme":"Hearts far from God"},{"day":16,"nt":{"book":"Matthew","chapter":16},"ot":{"book":"Isaiah","chapter":22},"ps":{"book":"Psalm","chapter":18},"theme":"Who do you say I am?"},{"day":17,"nt":{"book":"Matthew","chapter":17},"ot":{"book":"Exodus","chapter":24},"ps":{"book":"Psalm","chapter":97},"theme":"Transfigured on the mountain"},{"day":18,"nt":{"book":"Matthew","chapter":18},"ot":{"book":"Ezekiel","chapter":34},"ps":{"book":"Psalm","chapter":23},"theme":"Lost sheep and forgiveness"},{"day":19,"nt":{"book":"Matthew","chapter":19},"ot":{"book":"Genesis","chapter":2},"ps":{"book":"Proverbs","chapter":31},"theme":"Marriage, children, the rich man"},{"day":20,"nt":{"book":"Matthew","chapter":20},"ot":{"book":"Isaiah","chapter":53},"ps":{"book":"Psalm","chapter":40},"theme":"Servant of all, ransom for many"},{"day":21,"nt":{"book":"Matthew","chapter":21},"ot":{"book":"Zechariah","chapter":9},"ps":{"book":"Psalm","chapter":118},"theme":"The triumphal entry"},{"day":22,"nt":{"book":"Matthew","chapter":22},"ot":{"book":"Isaiah","chapter":25},"ps":{"book":"Psalm","chapter":45},"theme":"The great banquet"},{"day":23,"nt":{"book":"Matthew","chapter":23},"ot":{"book":"Malachi","chapter":2},"ps":{"book":"Psalm","chapter":12},"theme":"Woe to the hypocrites"},{"day":24,"nt":{"book":"Matthew","chapter":24},"ot":{"book":"Daniel","chapter":12},"ps":{"book":"Psalm","chapter":102},"theme":"Signs of the end"},{"day":25,"nt":{"book":"Matthew","chapter":25},"ot":{"book":"Ezekiel","chapter":18},"ps":{"book":"Psalm","chapter":96},"theme":"Faithful with what you've been given"},{"day":26,"nt":{"book":"Matthew","chapter":26},"ot":{"book":"Exodus","chapter":12},"ps":{"book":"Psalm","chapter":116},"theme":"The Last Supper and Gethsemane"},{"day":27,"nt":{"book":"Matthew","chapter":27},"ot":{"book":"Isaiah","chapter":52},"ps":{"book":"Psalm","chapter":22},"theme":"The crucifixion"},{"day":28,"nt":{"book":"Matthew","chapter":28},"ot":{"book":"Daniel","chapter":7},"ps":{"book":"Psalm","chapter":2},"theme":"All authority \u2014 go therefore"},{"day":29,"nt":{"book":"Mark","chapter":1},"ot":{"book":"Isaiah","chapter":40},"ps":{"book":"Psalm","chapter":29},"theme":"Immediately \u2014 the urgent servant"},{"day":30,"nt":{"book":"Mark","chapter":2},"ot":{"book":"Hosea","chapter":6},"ps":{"book":"Psalm","chapter":103},"theme":"New wine, new wineskins"},{"day":31,"nt":{"book":"Mark","chapter":3},"ot":{"book":"1 Samuel","chapter":16},"ps":{"book":"Psalm","chapter":11},"theme":"Called and commissioned"},{"day":32,"nt":{"book":"Mark","chapter":4},"ot":{"book":"Isaiah","chapter":55},"ps":{"book":"Psalm","chapter":65},"theme":"The sower and the seed"},{"day":33,"nt":{"book":"Mark","chapter":5},"ot":{"book":"Isaiah","chapter":65},"ps":{"book":"Psalm","chapter":107},"theme":"Legion, Jairus, the woman healed"},{"day":34,"nt":{"book":"Mark","chapter":6},"ot":{"book":"Exodus","chapter":16},"ps":{"book":"Psalm","chapter":23},"theme":"Feeding five thousand"},{"day":35,"nt":{"book":"Mark","chapter":7},"ot":{"book":"Isaiah","chapter":29},"ps":{"book":"Psalm","chapter":50},"theme":"What defiles a person"},{"day":36,"nt":{"book":"Mark","chapter":8},"ot":{"book":"Jeremiah","chapter":17},"ps":{"book":"Psalm","chapter":62},"theme":"Take up your cross"},{"day":37,"nt":{"book":"Mark","chapter":9},"ot":{"book":"Exodus","chapter":24},"ps":{"book":"Psalm","chapter":97},"theme":"Transfiguration and unbelief"},{"day":38,"nt":{"book":"Mark","chapter":10},"ot":{"book":"Genesis","chapter":2},"ps":{"book":"Psalm","chapter":119},"theme":"Serving, giving, following"},{"day":39,"nt":{"book":"Mark","chapter":11},"ot":{"book":"Zechariah","chapter":9},"ps":{"book":"Psalm","chapter":118},"theme":"Palm Sunday and the temple"},{"day":40,"nt":{"book":"Mark","chapter":12},"ot":{"book":"Deuteronomy","chapter":6},"ps":{"book":"Psalm","chapter":110},"theme":"The great commandment"},{"day":41,"nt":{"book":"Mark","chapter":13},"ot":{"book":"Daniel","chapter":7},"ps":{"book":"Psalm","chapter":46},"theme":"Watch and be ready"},{"day":42,"nt":{"book":"Mark","chapter":14},"ot":{"book":"Exodus","chapter":12},"ps":{"book":"Psalm","chapter":116},"theme":"Anointed, betrayed, denied"},{"day":43,"nt":{"book":"Mark","chapter":15},"ot":{"book":"Isaiah","chapter":52},"ps":{"book":"Psalm","chapter":22},"theme":"Crucified for us"},{"day":44,"nt":{"book":"Mark","chapter":16},"ot":{"book":"Isaiah","chapter":25},"ps":{"book":"Psalm","chapter":16},"theme":"He is risen \u2014 go tell"},{"day":45,"nt":{"book":"Luke","chapter":1},"ot":{"book":"1 Samuel","chapter":1},"ps":{"book":"Psalm","chapter":138},"theme":"Hannah and Mary \u2014 God remembers"},{"day":46,"nt":{"book":"Luke","chapter":2},"ot":{"book":"Isaiah","chapter":9},"ps":{"book":"Psalm","chapter":96},"theme":"Born in a manger \u2014 good news"},{"day":47,"nt":{"book":"Luke","chapter":3},"ot":{"book":"Isaiah","chapter":40},"ps":{"book":"Psalm","chapter":8},"theme":"Genealogy \u2014 Son of Adam, Son of God"},{"day":48,"nt":{"book":"Luke","chapter":4},"ot":{"book":"Deuteronomy","chapter":8},"ps":{"book":"Psalm","chapter":91},"theme":"Tempted, anointed, rejected"},{"day":49,"nt":{"book":"Luke","chapter":5},"ot":{"book":"Isaiah","chapter":6},"ps":{"book":"Psalm","chapter":103},"theme":"Leave everything and follow"},{"day":50,"nt":{"book":"Luke","chapter":6},"ot":{"book":"Leviticus","chapter":19},"ps":{"book":"Psalm","chapter":37},"theme":"Blessed are the poor \u2014 love enemies"},{"day":51,"nt":{"book":"Luke","chapter":7},"ot":{"book":"1 Kings","chapter":17},"ps":{"book":"Psalm","chapter":30},"theme":"A widow's son and a sinful woman"},{"day":52,"nt":{"book":"Luke","chapter":8},"ot":{"book":"Isaiah","chapter":55},"ps":{"book":"Psalm","chapter":107},"theme":"The sower, the storm, the healed"},{"day":53,"nt":{"book":"Luke","chapter":9},"ot":{"book":"Exodus","chapter":17},"ps":{"book":"Psalm","chapter":78},"theme":"Feeding, transfiguration, cost of following"},{"day":54,"nt":{"book":"Luke","chapter":10},"ot":{"book":"Deuteronomy","chapter":30},"ps":{"book":"Psalm","chapter":119},"theme":"The good Samaritan"},{"day":55,"nt":{"book":"Luke","chapter":11},"ot":{"book":"Isaiah","chapter":58},"ps":{"book":"Psalm","chapter":5},"theme":"Teach us to pray"},{"day":56,"nt":{"book":"Luke","chapter":12},"ot":{"book":"Jeremiah","chapter":17},"ps":{"book":"Proverbs","chapter":11},"theme":"Do not worry \u2014 be rich toward God"},{"day":57,"nt":{"book":"Luke","chapter":13},"ot":{"book":"Isaiah","chapter":55},"ps":{"book":"Psalm","chapter":92},"theme":"Narrow door, mustard seed, yeast"},{"day":58,"nt":{"book":"Luke","chapter":14},"ot":{"book":"Proverbs","chapter":25},"ps":{"book":"Psalm","chapter":15},"theme":"The great banquet \u2014 count the cost"},{"day":59,"nt":{"book":"Luke","chapter":15},"ot":{"book":"Ezekiel","chapter":34},"ps":{"book":"Psalm","chapter":23},"theme":"Lost sheep, lost coin, prodigal son"},{"day":60,"nt":{"book":"Luke","chapter":16},"ot":{"book":"Amos","chapter":5},"ps":{"book":"Proverbs","chapter":19},"theme":"Money, Lazarus, and eternity"},{"day":61,"nt":{"book":"Luke","chapter":17},"ot":{"book":"Genesis","chapter":19},"ps":{"book":"Psalm","chapter":25},"theme":"Faith, duty, and the kingdom within"},{"day":62,"nt":{"book":"Luke","chapter":18},"ot":{"book":"Genesis","chapter":18},"ps":{"book":"Psalm","chapter":34},"theme":"Persistent widow \u2014 childlike faith"},{"day":63,"nt":{"book":"Luke","chapter":19},"ot":{"book":"Isaiah","chapter":56},"ps":{"book":"Psalm","chapter":118},"theme":"Zacchaeus and the triumphal entry"},{"day":64,"nt":{"book":"Luke","chapter":20},"ot":{"book":"Isaiah","chapter":5},"ps":{"book":"Psalm","chapter":110},"theme":"By what authority?"},{"day":65,"nt":{"book":"Luke","chapter":21},"ot":{"book":"Daniel","chapter":9},"ps":{"book":"Psalm","chapter":102},"theme":"Watch \u2014 the Son of Man is coming"},{"day":66,"nt":{"book":"Luke","chapter":22},"ot":{"book":"Exodus","chapter":12},"ps":{"book":"Psalm","chapter":116},"theme":"The upper room and Gethsemane"},{"day":67,"nt":{"book":"Luke","chapter":23},"ot":{"book":"Isaiah","chapter":53},"ps":{"book":"Psalm","chapter":22},"theme":"Father, forgive them"},{"day":68,"nt":{"book":"Luke","chapter":24},"ot":{"book":"Deuteronomy","chapter":18},"ps":{"book":"Psalm","chapter":16},"theme":"The road to Emmaus \u2014 he is alive"},{"day":69,"nt":{"book":"John","chapter":1},"ot":{"book":"Genesis","chapter":1},"ps":{"book":"Psalm","chapter":33},"theme":"In the beginning was the Word"},{"day":70,"nt":{"book":"John","chapter":2},"ot":{"book":"Genesis","chapter":2},"ps":{"book":"Proverbs","chapter":9},"theme":"Water into wine \u2014 new creation begins"},{"day":71,"nt":{"book":"John","chapter":3},"ot":{"book":"Numbers","chapter":21},"ps":{"book":"Psalm","chapter":27},"theme":"You must be born again"},{"day":72,"nt":{"book":"John","chapter":4},"ot":{"book":"Isaiah","chapter":12},"ps":{"book":"Psalm","chapter":42},"theme":"Living water for a thirsty soul"},{"day":73,"nt":{"book":"John","chapter":5},"ot":{"book":"Ezekiel","chapter":37},"ps":{"book":"Psalm","chapter":30},"theme":"The Son gives life"},{"day":74,"nt":{"book":"John","chapter":6},"ot":{"book":"Exodus","chapter":16},"ps":{"book":"Psalm","chapter":78},"theme":"I am the bread of life"},{"day":75,"nt":{"book":"John","chapter":7},"ot":{"book":"Zechariah","chapter":14},"ps":{"book":"Psalm","chapter":46},"theme":"Rivers of living water"},{"day":76,"nt":{"book":"John","chapter":8},"ot":{"book":"Genesis","chapter":17},"ps":{"book":"Psalm","chapter":32},"theme":"Before Abraham was, I am"},{"day":77,"nt":{"book":"John","chapter":9},"ot":{"book":"Isaiah","chapter":42},"ps":{"book":"Psalm","chapter":146},"theme":"I am the light of the world"},{"day":78,"nt":{"book":"John","chapter":10},"ot":{"book":"Ezekiel","chapter":34},"ps":{"book":"Psalm","chapter":23},"theme":"I am the good shepherd"},{"day":79,"nt":{"book":"John","chapter":11},"ot":{"book":"Ezekiel","chapter":37},"ps":{"book":"Psalm","chapter":49},"theme":"I am the resurrection and the life"},{"day":80,"nt":{"book":"John","chapter":12},"ot":{"book":"Isaiah","chapter":6},"ps":{"book":"Psalm","chapter":118},"theme":"A grain of wheat must die"},{"day":81,"nt":{"book":"John","chapter":13},"ot":{"book":"Isaiah","chapter":52},"ps":{"book":"Psalm","chapter":41},"theme":"Servant \u2014 wash one another's feet"},{"day":82,"nt":{"book":"John","chapter":14},"ot":{"book":"Deuteronomy","chapter":31},"ps":{"book":"Psalm","chapter":16},"theme":"I am the way, the truth, the life"},{"day":83,"nt":{"book":"John","chapter":15},"ot":{"book":"Isaiah","chapter":5},"ps":{"book":"Psalm","chapter":80},"theme":"I am the vine \u2014 abide in me"},{"day":84,"nt":{"book":"John","chapter":16},"ot":{"book":"Isaiah","chapter":32},"ps":{"book":"Psalm","chapter":56},"theme":"Grief to joy \u2014 the Spirit is coming"},{"day":85,"nt":{"book":"John","chapter":17},"ot":{"book":"Numbers","chapter":6},"ps":{"book":"Psalm","chapter":133},"theme":"The high priestly prayer"},{"day":86,"nt":{"book":"John","chapter":18},"ot":{"book":"Genesis","chapter":3},"ps":{"book":"Psalm","chapter":88},"theme":"Betrayed and arrested"},{"day":87,"nt":{"book":"John","chapter":19},"ot":{"book":"Isaiah","chapter":53},"ps":{"book":"Psalm","chapter":22},"theme":"It is finished"},{"day":88,"nt":{"book":"John","chapter":20},"ot":{"book":"Isaiah","chapter":26},"ps":{"book":"Psalm","chapter":16},"theme":"The empty tomb \u2014 my Lord and my God"},{"day":89,"nt":{"book":"John","chapter":21},"ot":{"book":"Ezekiel","chapter":47},"ps":{"book":"Psalm","chapter":107},"theme":"Breakfast on the shore \u2014 do you love me?"},{"day":90,"nt":{"book":"Acts","chapter":1},"ot":{"book":"Ezekiel","chapter":36},"ps":{"book":"Psalm","chapter":2},"theme":"You will receive power"},{"day":91,"nt":{"book":"Acts","chapter":2},"ot":{"book":"Joel","chapter":2},"ps":{"book":"Psalm","chapter":16},"theme":"Pentecost \u2014 the Spirit falls"},{"day":92,"nt":{"book":"Acts","chapter":3},"ot":{"book":"Isaiah","chapter":35},"ps":{"book":"Psalm","chapter":30},"theme":"In the name of Jesus, walk"},{"day":93,"nt":{"book":"Acts","chapter":4},"ot":{"book":"Psalm","chapter":2},"ps":{"book":"Proverbs","chapter":29},"theme":"Bold prayer \u2014 they spoke the word"},{"day":94,"nt":{"book":"Acts","chapter":5},"ot":{"book":"Joshua","chapter":7},"ps":{"book":"Psalm","chapter":50},"theme":"Ananias, Sapphira, and integrity"},{"day":95,"nt":{"book":"Acts","chapter":6},"ot":{"book":"Numbers","chapter":11},"ps":{"book":"Psalm","chapter":75},"theme":"Seven chosen \u2014 Stephen full of grace"},{"day":96,"nt":{"book":"Acts","chapter":7},"ot":{"book":"Genesis","chapter":12},"ps":{"book":"Psalm","chapter":105},"theme":"Stephen's sermon \u2014 the whole story"},{"day":97,"nt":{"book":"Acts","chapter":8},"ot":{"book":"Isaiah","chapter":53},"ps":{"book":"Psalm","chapter":68},"theme":"Philip and the Ethiopian eunuch"},{"day":98,"nt":{"book":"Acts","chapter":9},"ot":{"book":"Jeremiah","chapter":1},"ps":{"book":"Psalm","chapter":119},"theme":"Saul on the road to Damascus"},{"day":99,"nt":{"book":"Acts","chapter":10},"ot":{"book":"Isaiah","chapter":56},"ps":{"book":"Psalm","chapter":67},"theme":"Cornelius \u2014 God shows no partiality"},{"day":100,"nt":{"book":"Acts","chapter":11},"ot":{"book":"Amos","chapter":9},"ps":{"book":"Psalm","chapter":87},"theme":"The church spreads \u2014 first called Christians"},{"day":101,"nt":{"book":"Acts","chapter":12},"ot":{"book":"Psalm","chapter":34},"ps":{"book":"Psalm","chapter":124},"theme":"Peter freed from prison"},{"day":102,"nt":{"book":"Acts","chapter":13},"ot":{"book":"Isaiah","chapter":49},"ps":{"book":"Psalm","chapter":47},"theme":"First missionary journey \u2014 light to the Gentiles"},{"day":103,"nt":{"book":"Acts","chapter":14},"ot":{"book":"Daniel","chapter":6},"ps":{"book":"Psalm","chapter":96},"theme":"Persecuted but pressing on"},{"day":104,"nt":{"book":"Acts","chapter":15},"ot":{"book":"Amos","chapter":9},"ps":{"book":"Psalm","chapter":117},"theme":"Jerusalem council \u2014 one family"},{"day":105,"nt":{"book":"Acts","chapter":16},"ot":{"book":"Isaiah","chapter":42},"ps":{"book":"Psalm","chapter":40},"theme":"Paul and Silas \u2014 singing in prison"},{"day":106,"nt":{"book":"Acts","chapter":17},"ot":{"book":"Isaiah","chapter":45},"ps":{"book":"Psalm","chapter":19},"theme":"Athens \u2014 the unknown God"},{"day":107,"nt":{"book":"Acts","chapter":18},"ot":{"book":"Isaiah","chapter":54},"ps":{"book":"Psalm","chapter":57},"theme":"Corinth \u2014 do not be afraid"},{"day":108,"nt":{"book":"Acts","chapter":19},"ot":{"book":"Isaiah","chapter":44},"ps":{"book":"Psalm","chapter":115},"theme":"Ephesus \u2014 the name of Jesus"},{"day":109,"nt":{"book":"Acts","chapter":20},"ot":{"book":"Ezekiel","chapter":33},"ps":{"book":"Psalm","chapter":49},"theme":"Farewell \u2014 guard the flock"},{"day":110,"nt":{"book":"Acts","chapter":21},"ot":{"book":"Jeremiah","chapter":38},"ps":{"book":"Psalm","chapter":31},"theme":"Paul arrested in Jerusalem"},{"day":111,"nt":{"book":"Acts","chapter":22},"ot":{"book":"Exodus","chapter":3},"ps":{"book":"Psalm","chapter":27},"theme":"Paul's testimony"},{"day":112,"nt":{"book":"Acts","chapter":23},"ot":{"book":"Numbers","chapter":27},"ps":{"book":"Psalm","chapter":37},"theme":"Take courage \u2014 you will go to Rome"},{"day":113,"nt":{"book":"Acts","chapter":24},"ot":{"book":"Nehemiah","chapter":5},"ps":{"book":"Proverbs","chapter":17},"theme":"Before Felix \u2014 justice delayed"},{"day":114,"nt":{"book":"Acts","chapter":25},"ot":{"book":"Esther","chapter":7},"ps":{"book":"Psalm","chapter":43},"theme":"I appeal to Caesar"},{"day":115,"nt":{"book":"Acts","chapter":26},"ot":{"book":"Isaiah","chapter":60},"ps":{"book":"Psalm","chapter":98},"theme":"Paul before Agrippa"},{"day":116,"nt":{"book":"Acts","chapter":27},"ot":{"book":"Jonah","chapter":1},"ps":{"book":"Psalm","chapter":107},"theme":"Shipwreck \u2014 be of good cheer"},{"day":117,"nt":{"book":"Acts","chapter":28},"ot":{"book":"Isaiah","chapter":6},"ps":{"book":"Psalm","chapter":67},"theme":"Rome \u2014 proclaiming the kingdom"},{"day":118,"nt":{"book":"Romans","chapter":1},"ot":{"book":"Psalm","chapter":19},"ps":{"book":"Psalm","chapter":14},"theme":"The gospel \u2014 creation testifies"},{"day":119,"nt":{"book":"Romans","chapter":2},"ot":{"book":"Deuteronomy","chapter":10},"ps":{"book":"Psalm","chapter":50},"theme":"The impartial Judge"},{"day":120,"nt":{"book":"Romans","chapter":3},"ot":{"book":"Isaiah","chapter":53},"ps":{"book":"Psalm","chapter":143},"theme":"All have sinned \u2014 justified freely"},{"day":121,"nt":{"book":"Romans","chapter":4},"ot":{"book":"Genesis","chapter":15},"ps":{"book":"Psalm","chapter":32},"theme":"Abraham \u2014 faith credited as righteousness"},{"day":122,"nt":{"book":"Romans","chapter":5},"ot":{"book":"Genesis","chapter":3},"ps":{"book":"Psalm","chapter":130},"theme":"Adam and Christ \u2014 grace abounds"},{"day":123,"nt":{"book":"Romans","chapter":6},"ot":{"book":"Exodus","chapter":14},"ps":{"book":"Psalm","chapter":30},"theme":"Dead to sin, alive to God"},{"day":124,"nt":{"book":"Romans","chapter":7},"ot":{"book":"Exodus","chapter":20},"ps":{"book":"Psalm","chapter":119},"theme":"The law and the struggle within"},{"day":125,"nt":{"book":"Romans","chapter":8},"ot":{"book":"Ezekiel","chapter":36},"ps":{"book":"Psalm","chapter":103},"theme":"No condemnation \u2014 the Spirit gives life"},{"day":126,"nt":{"book":"Romans","chapter":9},"ot":{"book":"Exodus","chapter":9},"ps":{"book":"Psalm","chapter":115},"theme":"God's sovereign mercy"},{"day":127,"nt":{"book":"Romans","chapter":10},"ot":{"book":"Deuteronomy","chapter":30},"ps":{"book":"Psalm","chapter":19},"theme":"Everyone who calls \u2014 beautiful feet"},{"day":128,"nt":{"book":"Romans","chapter":11},"ot":{"book":"Isaiah","chapter":11},"ps":{"book":"Psalm","chapter":80},"theme":"The olive tree \u2014 mercy for all"},{"day":129,"nt":{"book":"Romans","chapter":12},"ot":{"book":"Leviticus","chapter":19},"ps":{"book":"Psalm","chapter":133},"theme":"Living sacrifices \u2014 love in action"},{"day":130,"nt":{"book":"Romans","chapter":13},"ot":{"book":"Micah","chapter":6},"ps":{"book":"Proverbs","chapter":24},"theme":"Honor authorities \u2014 put on Christ"},{"day":131,"nt":{"book":"Romans","chapter":14},"ot":{"book":"Isaiah","chapter":45},"ps":{"book":"Psalm","chapter":95},"theme":"Welcome the weak \u2014 each will give account"},{"day":132,"nt":{"book":"Romans","chapter":15},"ot":{"book":"Isaiah","chapter":11},"ps":{"book":"Psalm","chapter":117},"theme":"Bear with each other \u2014 to the ends of the earth"},{"day":133,"nt":{"book":"Romans","chapter":16},"ot":{"book":"Proverbs","chapter":27},"ps":{"book":"Psalm","chapter":16},"theme":"Greet one another \u2014 watch out for division"},{"day":134,"nt":{"book":"1 Corinthians","chapter":1},"ot":{"book":"Isaiah","chapter":29},"ps":{"book":"Psalm","chapter":111},"theme":"The foolishness of the cross"},{"day":135,"nt":{"book":"1 Corinthians","chapter":2},"ot":{"book":"Isaiah","chapter":64},"ps":{"book":"Psalm","chapter":131},"theme":"What no eye has seen"},{"day":136,"nt":{"book":"1 Corinthians","chapter":3},"ot":{"book":"Proverbs","chapter":3},"ps":{"book":"Psalm","chapter":127},"theme":"You are God's field, God's building"},{"day":137,"nt":{"book":"1 Corinthians","chapter":4},"ot":{"book":"Jeremiah","chapter":20},"ps":{"book":"Psalm","chapter":44},"theme":"Servants of Christ"},{"day":138,"nt":{"book":"1 Corinthians","chapter":5},"ot":{"book":"Deuteronomy","chapter":17},"ps":{"book":"Psalm","chapter":101},"theme":"Remove the leaven"},{"day":139,"nt":{"book":"1 Corinthians","chapter":6},"ot":{"book":"Leviticus","chapter":19},"ps":{"book":"Psalm","chapter":24},"theme":"Your body is a temple"},{"day":140,"nt":{"book":"1 Corinthians","chapter":7},"ot":{"book":"Genesis","chapter":2},"ps":{"book":"Proverbs","chapter":5},"theme":"Marriage and undivided devotion"},{"day":141,"nt":{"book":"1 Corinthians","chapter":8},"ot":{"book":"Deuteronomy","chapter":4},"ps":{"book":"Psalm","chapter":115},"theme":"Knowledge puffs up, love builds"},{"day":142,"nt":{"book":"1 Corinthians","chapter":9},"ot":{"book":"Numbers","chapter":18},"ps":{"book":"Psalm","chapter":119},"theme":"Rights surrendered for the gospel"},{"day":143,"nt":{"book":"1 Corinthians","chapter":10},"ot":{"book":"Exodus","chapter":17},"ps":{"book":"Psalm","chapter":78},"theme":"Examples from Israel's wilderness"},{"day":144,"nt":{"book":"1 Corinthians","chapter":11},"ot":{"book":"Exodus","chapter":12},"ps":{"book":"Psalm","chapter":116},"theme":"Head coverings and the Lord's Supper"},{"day":145,"nt":{"book":"1 Corinthians","chapter":12},"ot":{"book":"Ezekiel","chapter":37},"ps":{"book":"Psalm","chapter":133},"theme":"One body, many members"},{"day":146,"nt":{"book":"1 Corinthians","chapter":13},"ot":{"book":"Song of Solomon","chapter":8},"ps":{"book":"Psalm","chapter":136},"theme":"Love never fails"},{"day":147,"nt":{"book":"1 Corinthians","chapter":14},"ot":{"book":"Isaiah","chapter":28},"ps":{"book":"Psalm","chapter":150},"theme":"Tongues and prophecy \u2014 orderly worship"},{"day":148,"nt":{"book":"1 Corinthians","chapter":15},"ot":{"book":"Isaiah","chapter":26},"ps":{"book":"Psalm","chapter":16},"theme":"The resurrection \u2014 death is swallowed up"},{"day":149,"nt":{"book":"1 Corinthians","chapter":16},"ot":{"book":"Proverbs","chapter":3},"ps":{"book":"Psalm","chapter":84},"theme":"Be strong \u2014 do everything in love"},{"day":150,"nt":{"book":"2 Corinthians","chapter":1},"ot":{"book":"Lamentations","chapter":3},"ps":{"book":"Psalm","chapter":34},"theme":"The God of all comfort"},{"day":151,"nt":{"book":"2 Corinthians","chapter":2},"ot":{"book":"Genesis","chapter":8},"ps":{"book":"Psalm","chapter":32},"theme":"The fragrance of Christ"},{"day":152,"nt":{"book":"2 Corinthians","chapter":3},"ot":{"book":"Exodus","chapter":34},"ps":{"book":"Psalm","chapter":19},"theme":"Letter of Christ \u2014 unveiled faces"},{"day":153,"nt":{"book":"2 Corinthians","chapter":4},"ot":{"book":"Isaiah","chapter":9},"ps":{"book":"Psalm","chapter":27},"theme":"Treasure in jars of clay"},{"day":154,"nt":{"book":"2 Corinthians","chapter":5},"ot":{"book":"Isaiah","chapter":65},"ps":{"book":"Psalm","chapter":85},"theme":"New creation \u2014 ministry of reconciliation"},{"day":155,"nt":{"book":"2 Corinthians","chapter":6},"ot":{"book":"Isaiah","chapter":49},"ps":{"book":"Psalm","chapter":126},"theme":"Now is the day of salvation"},{"day":156,"nt":{"book":"2 Corinthians","chapter":7},"ot":{"book":"Ezekiel","chapter":18},"ps":{"book":"Psalm","chapter":51},"theme":"Godly sorrow produces repentance"},{"day":157,"nt":{"book":"2 Corinthians","chapter":8},"ot":{"book":"Exodus","chapter":16},"ps":{"book":"Proverbs","chapter":11},"theme":"Generous giving \u2014 equality"},{"day":158,"nt":{"book":"2 Corinthians","chapter":9},"ot":{"book":"Proverbs","chapter":11},"ps":{"book":"Psalm","chapter":112},"theme":"God loves a cheerful giver"},{"day":159,"nt":{"book":"2 Corinthians","chapter":10},"ot":{"book":"Jeremiah","chapter":9},"ps":{"book":"Psalm","chapter":20},"theme":"Boast in the Lord alone"},{"day":160,"nt":{"book":"2 Corinthians","chapter":11},"ot":{"book":"Job","chapter":1},"ps":{"book":"Psalm","chapter":43},"theme":"Paul's sufferings \u2014 foolish boasting"},{"day":161,"nt":{"book":"2 Corinthians","chapter":12},"ot":{"book":"Job","chapter":40},"ps":{"book":"Psalm","chapter":73},"theme":"My grace is sufficient for you"},{"day":162,"nt":{"book":"2 Corinthians","chapter":13},"ot":{"book":"Deuteronomy","chapter":19},"ps":{"book":"Psalm","chapter":139},"theme":"Examine yourself \u2014 aim for restoration"},{"day":163,"nt":{"book":"Galatians","chapter":1},"ot":{"book":"Jeremiah","chapter":1},"ps":{"book":"Psalm","chapter":119},"theme":"Called by grace \u2014 no other gospel"},{"day":164,"nt":{"book":"Galatians","chapter":2},"ot":{"book":"Genesis","chapter":15},"ps":{"book":"Psalm","chapter":32},"theme":"Justified by faith, not works"},{"day":165,"nt":{"book":"Galatians","chapter":3},"ot":{"book":"Genesis","chapter":12},"ps":{"book":"Psalm","chapter":47},"theme":"The blessing of Abraham in Christ"},{"day":166,"nt":{"book":"Galatians","chapter":4},"ot":{"book":"Isaiah","chapter":54},"ps":{"book":"Psalm","chapter":113},"theme":"Heirs, not slaves \u2014 Abba, Father"},{"day":167,"nt":{"book":"Galatians","chapter":5},"ot":{"book":"Leviticus","chapter":19},"ps":{"book":"Psalm","chapter":1},"theme":"Fruit of the Spirit \u2014 walk in the Spirit"},{"day":168,"nt":{"book":"Galatians","chapter":6},"ot":{"book":"Proverbs","chapter":11},"ps":{"book":"Psalm","chapter":126},"theme":"Bear one another's burdens \u2014 sow and reap"},{"day":169,"nt":{"book":"Ephesians","chapter":1},"ot":{"book":"Isaiah","chapter":43},"ps":{"book":"Psalm","chapter":103},"theme":"Chosen, adopted, sealed \u2014 all spiritual blessings"},{"day":170,"nt":{"book":"Ephesians","chapter":2},"ot":{"book":"Ezekiel","chapter":37},"ps":{"book":"Psalm","chapter":130},"theme":"By grace through faith \u2014 one new humanity"},{"day":171,"nt":{"book":"Ephesians","chapter":3},"ot":{"book":"Isaiah","chapter":60},"ps":{"book":"Psalm","chapter":67},"theme":"The mystery revealed \u2014 immeasurable love"},{"day":172,"nt":{"book":"Ephesians","chapter":4},"ot":{"book":"Psalm","chapter":68},"ps":{"book":"Psalm","chapter":133},"theme":"One body \u2014 speaking truth in love"},{"day":173,"nt":{"book":"Ephesians","chapter":5},"ot":{"book":"Song of Solomon","chapter":5},"ps":{"book":"Psalm","chapter":45},"theme":"Walk in love \u2014 husband and wife"},{"day":174,"nt":{"book":"Ephesians","chapter":6},"ot":{"book":"Deuteronomy","chapter":6},"ps":{"book":"Psalm","chapter":18},"theme":"The full armor of God"},{"day":175,"nt":{"book":"Philippians","chapter":1},"ot":{"book":"Isaiah","chapter":49},"ps":{"book":"Psalm","chapter":27},"theme":"To live is Christ, to die is gain"},{"day":176,"nt":{"book":"Philippians","chapter":2},"ot":{"book":"Isaiah","chapter":52},"ps":{"book":"Psalm","chapter":22},"theme":"The mind of Christ \u2014 servant of all"},{"day":177,"nt":{"book":"Philippians","chapter":3},"ot":{"book":"Isaiah","chapter":26},"ps":{"book":"Psalm","chapter":16},"theme":"Press on toward the goal"},{"day":178,"nt":{"book":"Philippians","chapter":4},"ot":{"book":"Isaiah","chapter":26},"ps":{"book":"Psalm","chapter":23},"theme":"I can do all things \u2014 peace that passes understanding"},{"day":179,"nt":{"book":"Colossians","chapter":1},"ot":{"book":"Proverbs","chapter":8},"ps":{"book":"Psalm","chapter":19},"theme":"Christ \u2014 firstborn over all creation"},{"day":180,"nt":{"book":"Colossians","chapter":2},"ot":{"book":"Genesis","chapter":17},"ps":{"book":"Psalm","chapter":119},"theme":"Rooted in Christ \u2014 don't be taken captive"},{"day":181,"nt":{"book":"Colossians","chapter":3},"ot":{"book":"Leviticus","chapter":19},"ps":{"book":"Psalm","chapter":133},"theme":"Set your mind on things above"},{"day":182,"nt":{"book":"Colossians","chapter":4},"ot":{"book":"Proverbs","chapter":16},"ps":{"book":"Psalm","chapter":141},"theme":"Walk in wisdom \u2014 let your speech be seasoned"},{"day":183,"nt":{"book":"1 Thessalonians","chapter":1},"ot":{"book":"Isaiah","chapter":1},"ps":{"book":"Psalm","chapter":96},"theme":"Your faith is known everywhere"},{"day":184,"nt":{"book":"1 Thessalonians","chapter":2},"ot":{"book":"Nehemiah","chapter":5},"ps":{"book":"Psalm","chapter":84},"theme":"Like a nursing mother and a father"},{"day":185,"nt":{"book":"1 Thessalonians","chapter":3},"ot":{"book":"Ezra","chapter":8},"ps":{"book":"Psalm","chapter":138},"theme":"Standing firm in the Lord"},{"day":186,"nt":{"book":"1 Thessalonians","chapter":4},"ot":{"book":"Isaiah","chapter":26},"ps":{"book":"Psalm","chapter":90},"theme":"The dead in Christ will rise"},{"day":187,"nt":{"book":"1 Thessalonians","chapter":5},"ot":{"book":"Isaiah","chapter":60},"ps":{"book":"Psalm","chapter":130},"theme":"Children of light \u2014 pray without ceasing"},{"day":188,"nt":{"book":"2 Thessalonians","chapter":1},"ot":{"book":"Daniel","chapter":7},"ps":{"book":"Psalm","chapter":2},"theme":"Relief when Christ is revealed"},{"day":189,"nt":{"book":"2 Thessalonians","chapter":2},"ot":{"book":"Daniel","chapter":11},"ps":{"book":"Psalm","chapter":46},"theme":"The man of lawlessness"},{"day":190,"nt":{"book":"2 Thessalonians","chapter":3},"ot":{"book":"Proverbs","chapter":10},"ps":{"book":"Psalm","chapter":128},"theme":"Work quietly \u2014 do not grow weary"},{"day":191,"nt":{"book":"1 Timothy","chapter":1},"ot":{"book":"Exodus","chapter":20},"ps":{"book":"Psalm","chapter":51},"theme":"Sound doctrine \u2014 the worst of sinners"},{"day":192,"nt":{"book":"1 Timothy","chapter":2},"ot":{"book":"Isaiah","chapter":56},"ps":{"book":"Psalm","chapter":67},"theme":"Pray for all people \u2014 one mediator"},{"day":193,"nt":{"book":"1 Timothy","chapter":3},"ot":{"book":"Ezekiel","chapter":44},"ps":{"book":"Proverbs","chapter":20},"theme":"Qualifications for elders and deacons"},{"day":194,"nt":{"book":"1 Timothy","chapter":4},"ot":{"book":"Deuteronomy","chapter":13},"ps":{"book":"Psalm","chapter":119},"theme":"Train yourself for godliness"},{"day":195,"nt":{"book":"1 Timothy","chapter":5},"ot":{"book":"Leviticus","chapter":19},"ps":{"book":"Proverbs","chapter":23},"theme":"Honor widows \u2014 rebuke elders"},{"day":196,"nt":{"book":"1 Timothy","chapter":6},"ot":{"book":"Proverbs","chapter":30},"ps":{"book":"Psalm","chapter":49},"theme":"Godliness with contentment is great gain"},{"day":197,"nt":{"book":"2 Timothy","chapter":1},"ot":{"book":"Jeremiah","chapter":20},"ps":{"book":"Psalm","chapter":27},"theme":"Fan into flame the gift of God"},{"day":198,"nt":{"book":"2 Timothy","chapter":2},"ot":{"book":"Proverbs","chapter":2},"ps":{"book":"Psalm","chapter":119},"theme":"Soldier, athlete, farmer \u2014 be strong"},{"day":199,"nt":{"book":"2 Timothy","chapter":3},"ot":{"book":"Isaiah","chapter":8},"ps":{"book":"Psalm","chapter":12},"theme":"All Scripture is breathed out by God"},{"day":200,"nt":{"book":"2 Timothy","chapter":4},"ot":{"book":"Isaiah","chapter":61},"ps":{"book":"Psalm","chapter":98},"theme":"I have finished the race"},{"day":201,"nt":{"book":"Titus","chapter":1},"ot":{"book":"Ezekiel","chapter":44},"ps":{"book":"Proverbs","chapter":11},"theme":"Appoint elders \u2014 sound in faith"},{"day":202,"nt":{"book":"Titus","chapter":2},"ot":{"book":"Deuteronomy","chapter":5},"ps":{"book":"Psalm","chapter":128},"theme":"Teach what accords with sound doctrine"},{"day":203,"nt":{"book":"Titus","chapter":3},"ot":{"book":"Ezekiel","chapter":36},"ps":{"book":"Psalm","chapter":51},"theme":"Not by works but by mercy \u2014 renewed"},{"day":204,"nt":{"book":"Philemon","chapter":1},"ot":{"book":"Leviticus","chapter":25},"ps":{"book":"Psalm","chapter":133},"theme":"Receive him as you would receive me"},{"day":205,"nt":{"book":"Hebrews","chapter":1},"ot":{"book":"Psalm","chapter":2},"ps":{"book":"Psalm","chapter":110},"theme":"Greater than angels \u2014 the Son of God"},{"day":206,"nt":{"book":"Hebrews","chapter":2},"ot":{"book":"Psalm","chapter":8},"ps":{"book":"Psalm","chapter":22},"theme":"For a little while lower than angels"},{"day":207,"nt":{"book":"Hebrews","chapter":3},"ot":{"book":"Numbers","chapter":14},"ps":{"book":"Psalm","chapter":95},"theme":"Greater than Moses \u2014 do not harden hearts"},{"day":208,"nt":{"book":"Hebrews","chapter":4},"ot":{"book":"Genesis","chapter":2},"ps":{"book":"Psalm","chapter":95},"theme":"Enter his rest \u2014 living and active Word"},{"day":209,"nt":{"book":"Hebrews","chapter":5},"ot":{"book":"Leviticus","chapter":16},"ps":{"book":"Psalm","chapter":110},"theme":"Great high priest \u2014 learned obedience"},{"day":210,"nt":{"book":"Hebrews","chapter":6},"ot":{"book":"Genesis","chapter":22},"ps":{"book":"Psalm","chapter":119},"theme":"Anchor of the soul \u2014 oath and promise"},{"day":211,"nt":{"book":"Hebrews","chapter":7},"ot":{"book":"Genesis","chapter":14},"ps":{"book":"Psalm","chapter":110},"theme":"Melchizedek \u2014 priest forever"},{"day":212,"nt":{"book":"Hebrews","chapter":8},"ot":{"book":"Jeremiah","chapter":31},"ps":{"book":"Psalm","chapter":40},"theme":"A better covenant, better promises"},{"day":213,"nt":{"book":"Hebrews","chapter":9},"ot":{"book":"Leviticus","chapter":16},"ps":{"book":"Psalm","chapter":51},"theme":"Christ the perfect sacrifice"},{"day":214,"nt":{"book":"Hebrews","chapter":10},"ot":{"book":"Jeremiah","chapter":31},"ps":{"book":"Psalm","chapter":40},"theme":"Once for all \u2014 hold fast"},{"day":215,"nt":{"book":"Hebrews","chapter":11},"ot":{"book":"Genesis","chapter":12},"ps":{"book":"Psalm","chapter":27},"theme":"By faith \u2014 the great cloud"},{"day":216,"nt":{"book":"Hebrews","chapter":12},"ot":{"book":"Deuteronomy","chapter":4},"ps":{"book":"Psalm","chapter":73},"theme":"Fix your eyes \u2014 endure discipline"},{"day":217,"nt":{"book":"Hebrews","chapter":13},"ot":{"book":"Genesis","chapter":18},"ps":{"book":"Psalm","chapter":23},"theme":"Show hospitality \u2014 Jesus the same"},{"day":218,"nt":{"book":"James","chapter":1},"ot":{"book":"Proverbs","chapter":2},"ps":{"book":"Psalm","chapter":119},"theme":"Trials produce steadfastness \u2014 doers of the word"},{"day":219,"nt":{"book":"James","chapter":2},"ot":{"book":"Leviticus","chapter":19},"ps":{"book":"Psalm","chapter":15},"theme":"Faith without works is dead"},{"day":220,"nt":{"book":"James","chapter":3},"ot":{"book":"Proverbs","chapter":18},"ps":{"book":"Psalm","chapter":141},"theme":"Taming the tongue"},{"day":221,"nt":{"book":"James","chapter":4},"ot":{"book":"Proverbs","chapter":3},"ps":{"book":"Psalm","chapter":131},"theme":"Draw near to God \u2014 humble yourselves"},{"day":222,"nt":{"book":"James","chapter":5},"ot":{"book":"Job","chapter":1},"ps":{"book":"Psalm","chapter":103},"theme":"Patience in suffering \u2014 prayer of faith"},{"day":223,"nt":{"book":"1 Peter","chapter":1},"ot":{"book":"Isaiah","chapter":40},"ps":{"book":"Psalm","chapter":33},"theme":"Born again \u2014 a living hope"},{"day":224,"nt":{"book":"1 Peter","chapter":2},"ot":{"book":"Isaiah","chapter":28},"ps":{"book":"Psalm","chapter":118},"theme":"Living stones \u2014 a holy nation"},{"day":225,"nt":{"book":"1 Peter","chapter":3},"ot":{"book":"Genesis","chapter":6},"ps":{"book":"Psalm","chapter":34},"theme":"Gentle and quiet spirit \u2014 ready to give account"},{"day":226,"nt":{"book":"1 Peter","chapter":4},"ot":{"book":"Isaiah","chapter":10},"ps":{"book":"Psalm","chapter":31},"theme":"Suffering as a Christian \u2014 the end is near"},{"day":227,"nt":{"book":"1 Peter","chapter":5},"ot":{"book":"Ezekiel","chapter":34},"ps":{"book":"Psalm","chapter":23},"theme":"Shepherd the flock \u2014 humble yourselves"},{"day":228,"nt":{"book":"2 Peter","chapter":1},"ot":{"book":"Proverbs","chapter":4},"ps":{"book":"Psalm","chapter":119},"theme":"Make your calling sure \u2014 eyewitnesses"},{"day":229,"nt":{"book":"2 Peter","chapter":2},"ot":{"book":"Numbers","chapter":22},"ps":{"book":"Psalm","chapter":1},"theme":"False prophets \u2014 like Balaam"},{"day":230,"nt":{"book":"2 Peter","chapter":3},"ot":{"book":"Isaiah","chapter":65},"ps":{"book":"Psalm","chapter":90},"theme":"The day of the Lord \u2014 patient toward salvation"},{"day":231,"nt":{"book":"1 John","chapter":1},"ot":{"book":"Isaiah","chapter":6},"ps":{"book":"Psalm","chapter":32},"theme":"Walking in the light \u2014 fellowship with God"},{"day":232,"nt":{"book":"1 John","chapter":2},"ot":{"book":"Deuteronomy","chapter":13},"ps":{"book":"Psalm","chapter":119},"theme":"Do not love the world \u2014 abide in him"},{"day":233,"nt":{"book":"1 John","chapter":3},"ot":{"book":"Genesis","chapter":4},"ps":{"book":"Psalm","chapter":133},"theme":"Children of God \u2014 love one another"},{"day":234,"nt":{"book":"1 John","chapter":4},"ot":{"book":"Deuteronomy","chapter":6},"ps":{"book":"Psalm","chapter":103},"theme":"God is love \u2014 perfect love casts out fear"},{"day":235,"nt":{"book":"1 John","chapter":5},"ot":{"book":"Isaiah","chapter":53},"ps":{"book":"Psalm","chapter":37},"theme":"Overcoming the world \u2014 eternal life"},{"day":236,"nt":{"book":"2 John","chapter":1},"ot":{"book":"Deuteronomy","chapter":7},"ps":{"book":"Psalm","chapter":101},"theme":"Walk in love \u2014 watch for deceivers"},{"day":237,"nt":{"book":"3 John","chapter":1},"ot":{"book":"Proverbs","chapter":3},"ps":{"book":"Psalm","chapter":112},"theme":"Imitate what is good \u2014 Gaius and Diotrephes"},{"day":238,"nt":{"book":"Jude","chapter":1},"ot":{"book":"Numbers","chapter":16},"ps":{"book":"Psalm","chapter":18},"theme":"Contend for the faith \u2014 keep yourselves in God's love"},{"day":239,"nt":{"book":"Revelation","chapter":1},"ot":{"book":"Daniel","chapter":7},"ps":{"book":"Psalm","chapter":110},"theme":"I am the Alpha and Omega"},{"day":240,"nt":{"book":"Revelation","chapter":2},"ot":{"book":"Jeremiah","chapter":2},"ps":{"book":"Psalm","chapter":1},"theme":"Letters to the churches \u2014 Ephesus, Smyrna"},{"day":241,"nt":{"book":"Revelation","chapter":3},"ot":{"book":"Isaiah","chapter":22},"ps":{"book":"Psalm","chapter":15},"theme":"Letters to the churches \u2014 Sardis, Philadelphia, Laodicea"},{"day":242,"nt":{"book":"Revelation","chapter":4},"ot":{"book":"Isaiah","chapter":6},"ps":{"book":"Psalm","chapter":99},"theme":"The throne room \u2014 holy, holy, holy"},{"day":243,"nt":{"book":"Revelation","chapter":5},"ot":{"book":"Isaiah","chapter":53},"ps":{"book":"Psalm","chapter":24},"theme":"Worthy is the Lamb who was slain"},{"day":244,"nt":{"book":"Revelation","chapter":6},"ot":{"book":"Zechariah","chapter":6},"ps":{"book":"Psalm","chapter":79},"theme":"The seven seals opened"},{"day":245,"nt":{"book":"Revelation","chapter":7},"ot":{"book":"Ezekiel","chapter":9},"ps":{"book":"Psalm","chapter":34},"theme":"A great multitude no one can count"},{"day":246,"nt":{"book":"Revelation","chapter":8},"ot":{"book":"Exodus","chapter":9},"ps":{"book":"Psalm","chapter":18},"theme":"Trumpets and judgment"},{"day":247,"nt":{"book":"Revelation","chapter":9},"ot":{"book":"Joel","chapter":1},"ps":{"book":"Psalm","chapter":46},"theme":"The fifth and sixth trumpets"},{"day":248,"nt":{"book":"Revelation","chapter":10},"ot":{"book":"Ezekiel","chapter":3},"ps":{"book":"Psalm","chapter":119},"theme":"The little scroll \u2014 sweet and bitter"},{"day":249,"nt":{"book":"Revelation","chapter":11},"ot":{"book":"Zechariah","chapter":4},"ps":{"book":"Psalm","chapter":2},"theme":"Two witnesses \u2014 the seventh trumpet"},{"day":250,"nt":{"book":"Revelation","chapter":12},"ot":{"book":"Genesis","chapter":3},"ps":{"book":"Psalm","chapter":48},"theme":"The woman, the dragon, the child"},{"day":251,"nt":{"book":"Revelation","chapter":13},"ot":{"book":"Daniel","chapter":7},"ps":{"book":"Psalm","chapter":94},"theme":"The two beasts"},{"day":252,"nt":{"book":"Revelation","chapter":14},"ot":{"book":"Isaiah","chapter":63},"ps":{"book":"Psalm","chapter":96},"theme":"The Lamb on Mount Zion \u2014 harvest of the earth"},{"day":253,"nt":{"book":"Revelation","chapter":15},"ot":{"book":"Exodus","chapter":15},"ps":{"book":"Psalm","chapter":86},"theme":"The song of Moses and the Lamb"},{"day":254,"nt":{"book":"Revelation","chapter":16},"ot":{"book":"Exodus","chapter":9},"ps":{"book":"Psalm","chapter":75},"theme":"Seven bowls of wrath"},{"day":255,"nt":{"book":"Revelation","chapter":17},"ot":{"book":"Daniel","chapter":7},"ps":{"book":"Psalm","chapter":2},"theme":"The great prostitute and the beast"},{"day":256,"nt":{"book":"Revelation","chapter":18},"ot":{"book":"Isaiah","chapter":47},"ps":{"book":"Psalm","chapter":137},"theme":"Fallen, fallen is Babylon"},{"day":257,"nt":{"book":"Revelation","chapter":19},"ot":{"book":"Isaiah","chapter":62},"ps":{"book":"Psalm","chapter":45},"theme":"Hallelujah \u2014 the wedding supper of the Lamb"},{"day":258,"nt":{"book":"Revelation","chapter":20},"ot":{"book":"Ezekiel","chapter":38},"ps":{"book":"Psalm","chapter":110},"theme":"The millennium and the final judgment"},{"day":259,"nt":{"book":"Revelation","chapter":21},"ot":{"book":"Isaiah","chapter":65},"ps":{"book":"Psalm","chapter":87},"theme":"All things new \u2014 no more tears"},{"day":260,"nt":{"book":"Revelation","chapter":22},"ot":{"book":"Genesis","chapter":2},"ps":{"book":"Psalm","chapter":46},"theme":"Come, Lord Jesus \u2014 the water of life"},{"day":261,"nt":{"book":"Galatians","chapter":1},"ot":{"book":"Jeremiah","chapter":31},"ps":{"book":"Psalm","chapter":40},"theme":"No other gospel \u2014 grace and truth"},{"day":262,"nt":{"book":"Romans","chapter":1},"ot":{"book":"Habakkuk","chapter":2},"ps":{"book":"Psalm","chapter":14},"theme":"The righteous shall live by faith"},{"day":263,"nt":{"book":"Romans","chapter":5},"ot":{"book":"Genesis","chapter":5},"ps":{"book":"Psalm","chapter":51},"theme":"Hope does not disappoint"},{"day":264,"nt":{"book":"Romans","chapter":8},"ot":{"book":"Isaiah","chapter":43},"ps":{"book":"Psalm","chapter":34},"theme":"More than conquerors"},{"day":265,"nt":{"book":"Romans","chapter":12},"ot":{"book":"Isaiah","chapter":58},"ps":{"book":"Psalm","chapter":41},"theme":"Love your enemies \u2014 overcome evil with good"},{"day":266,"nt":{"book":"Matthew","chapter":5},"ot":{"book":"Isaiah","chapter":57},"ps":{"book":"Psalm","chapter":37},"theme":"Blessed are the poor in spirit"},{"day":267,"nt":{"book":"Matthew","chapter":6},"ot":{"book":"1 Kings","chapter":17},"ps":{"book":"Psalm","chapter":63},"theme":"Your Father who sees in secret"},{"day":268,"nt":{"book":"Matthew","chapter":7},"ot":{"book":"Proverbs","chapter":8},"ps":{"book":"Psalm","chapter":19},"theme":"Ask, seek, knock \u2014 the narrow gate"},{"day":269,"nt":{"book":"Luke","chapter":11},"ot":{"book":"Isaiah","chapter":64},"ps":{"book":"Psalm","chapter":141},"theme":"When you pray \u2014 Our Father"},{"day":270,"nt":{"book":"Luke","chapter":15},"ot":{"book":"Isaiah","chapter":55},"ps":{"book":"Psalm","chapter":103},"theme":"He ran to meet him \u2014 the father's love"},{"day":271,"nt":{"book":"John","chapter":6},"ot":{"book":"Numbers","chapter":11},"ps":{"book":"Psalm","chapter":34},"theme":"I am the bread \u2014 whoever comes will not hunger"},{"day":272,"nt":{"book":"John","chapter":8},"ot":{"book":"Exodus","chapter":3},"ps":{"book":"Psalm","chapter":36},"theme":"I am the light \u2014 before Abraham, I am"},{"day":273,"nt":{"book":"John","chapter":10},"ot":{"book":"Psalm","chapter":100},"ps":{"book":"Psalm","chapter":23},"theme":"I am the good shepherd \u2014 know my voice"},{"day":274,"nt":{"book":"John","chapter":11},"ot":{"book":"Job","chapter":19},"ps":{"book":"Psalm","chapter":16},"theme":"I am the resurrection \u2014 Lazarus, come out"},{"day":275,"nt":{"book":"John","chapter":15},"ot":{"book":"Isaiah","chapter":27},"ps":{"book":"Psalm","chapter":80},"theme":"I am the vine \u2014 abide, and bear much fruit"},{"day":276,"nt":{"book":"John","chapter":12},"ot":{"book":"Zechariah","chapter":9},"ps":{"book":"Psalm","chapter":118},"theme":"Unless a grain of wheat falls"},{"day":277,"nt":{"book":"John","chapter":13},"ot":{"book":"Isaiah","chapter":52},"ps":{"book":"Psalm","chapter":41},"theme":"Loved them to the end \u2014 servant"},{"day":278,"nt":{"book":"John","chapter":14},"ot":{"book":"Isaiah","chapter":11},"ps":{"book":"Psalm","chapter":84},"theme":"Do not let your hearts be troubled"},{"day":279,"nt":{"book":"John","chapter":17},"ot":{"book":"Deuteronomy","chapter":32},"ps":{"book":"Psalm","chapter":8},"theme":"Father, glorify your Son \u2014 unity"},{"day":280,"nt":{"book":"John","chapter":18},"ot":{"book":"Isaiah","chapter":50},"ps":{"book":"Psalm","chapter":69},"theme":"The garden, the arrest, the denial"},{"day":281,"nt":{"book":"John","chapter":19},"ot":{"book":"Zechariah","chapter":12},"ps":{"book":"Psalm","chapter":31},"theme":"Behold the man \u2014 it is finished"},{"day":282,"nt":{"book":"John","chapter":20},"ot":{"book":"Isaiah","chapter":25},"ps":{"book":"Psalm","chapter":118},"theme":"Peace be with you \u2014 receive the Spirit"},{"day":283,"nt":{"book":"Psalm","chapter":120},"ot":{"book":"Deuteronomy","chapter":30},"ps":{"book":"Proverbs","chapter":15},"theme":"A song of ascents \u2014 I lift my eyes"},{"day":284,"nt":{"book":"Psalm","chapter":121},"ot":{"book":"Genesis","chapter":28},"ps":{"book":"Proverbs","chapter":16},"theme":"My help comes from the Lord"},{"day":285,"nt":{"book":"Psalm","chapter":122},"ot":{"book":"Isaiah","chapter":62},"ps":{"book":"Proverbs","chapter":17},"theme":"Pray for the peace of Jerusalem"},{"day":286,"nt":{"book":"Psalm","chapter":123},"ot":{"book":"Isaiah","chapter":30},"ps":{"book":"Proverbs","chapter":18},"theme":"Eyes toward you \u2014 mercy, Lord"},{"day":287,"nt":{"book":"Psalm","chapter":124},"ot":{"book":"Exodus","chapter":14},"ps":{"book":"Proverbs","chapter":19},"theme":"If the Lord had not been on our side"},{"day":288,"nt":{"book":"Psalm","chapter":125},"ot":{"book":"Isaiah","chapter":26},"ps":{"book":"Proverbs","chapter":20},"theme":"Those who trust in the Lord"},{"day":289,"nt":{"book":"Psalm","chapter":126},"ot":{"book":"Joel","chapter":2},"ps":{"book":"Proverbs","chapter":21},"theme":"When the Lord restored our fortunes"},{"day":290,"nt":{"book":"Psalm","chapter":127},"ot":{"book":"Deuteronomy","chapter":28},"ps":{"book":"Proverbs","chapter":22},"theme":"Unless the Lord builds the house"},{"day":291,"nt":{"book":"Psalm","chapter":128},"ot":{"book":"Genesis","chapter":1},"ps":{"book":"Proverbs","chapter":23},"theme":"Blessed is everyone who fears the Lord"},{"day":292,"nt":{"book":"Psalm","chapter":130},"ot":{"book":"Micah","chapter":7},"ps":{"book":"Proverbs","chapter":24},"theme":"Out of the depths \u2014 hope in his word"},{"day":293,"nt":{"book":"Psalm","chapter":131},"ot":{"book":"Matthew","chapter":18},"ps":{"book":"Proverbs","chapter":25},"theme":"I have calmed my soul \u2014 like a weaned child"},{"day":294,"nt":{"book":"Psalm","chapter":133},"ot":{"book":"John","chapter":17},"ps":{"book":"Proverbs","chapter":26},"theme":"Behold how good \u2014 unity of brothers"},{"day":295,"nt":{"book":"Proverbs","chapter":1},"ot":{"book":"James","chapter":1},"ps":{"book":"Psalm","chapter":111},"theme":"The fear of the Lord is the beginning"},{"day":296,"nt":{"book":"Proverbs","chapter":2},"ot":{"book":"James","chapter":3},"ps":{"book":"Psalm","chapter":119},"theme":"Seek wisdom like silver"},{"day":297,"nt":{"book":"Proverbs","chapter":3},"ot":{"book":"Philippians","chapter":4},"ps":{"book":"Psalm","chapter":23},"theme":"Trust in the Lord with all your heart"},{"day":298,"nt":{"book":"Proverbs","chapter":4},"ot":{"book":"2 Timothy","chapter":2},"ps":{"book":"Psalm","chapter":1},"theme":"Get wisdom \u2014 guard your heart"},{"day":299,"nt":{"book":"Proverbs","chapter":8},"ot":{"book":"John","chapter":1},"ps":{"book":"Psalm","chapter":104},"theme":"Wisdom was there at creation"},{"day":300,"nt":{"book":"Proverbs","chapter":31},"ot":{"book":"1 Thessalonians","chapter":5},"ps":{"book":"Psalm","chapter":128},"theme":"A wife of noble character"},{"day":301,"nt":{"book":"Job","chapter":1},"ot":{"book":"Luke","chapter":22},"ps":{"book":"Psalm","chapter":22},"theme":"Have you considered my servant Job?"},{"day":302,"nt":{"book":"Job","chapter":2},"ot":{"book":"2 Corinthians","chapter":1},"ps":{"book":"Psalm","chapter":88},"theme":"Afflicted but not forsaken"},{"day":303,"nt":{"book":"Job","chapter":19},"ot":{"book":"John","chapter":11},"ps":{"book":"Psalm","chapter":16},"theme":"I know that my Redeemer lives"},{"day":304,"nt":{"book":"Job","chapter":38},"ot":{"book":"Romans","chapter":11},"ps":{"book":"Psalm","chapter":139},"theme":"Where were you? \u2014 the voice from the storm"},{"day":305,"nt":{"book":"Job","chapter":42},"ot":{"book":"Revelation","chapter":21},"ps":{"book":"Psalm","chapter":30},"theme":"Restored \u2014 the Lord blessed the latter days"},{"day":306,"nt":{"book":"Psalm","chapter":1},"ot":{"book":"Joshua","chapter":1},"ps":{"book":"Proverbs","chapter":1},"theme":"Blessed is the man \u2014 delight in the law"},{"day":307,"nt":{"book":"Psalm","chapter":22},"ot":{"book":"Isaiah","chapter":53},"ps":{"book":"Matthew","chapter":27},"theme":"My God, my God \u2014 forsaken and rescued"},{"day":308,"nt":{"book":"Psalm","chapter":23},"ot":{"book":"Ezekiel","chapter":34},"ps":{"book":"John","chapter":10},"theme":"The Lord is my shepherd"},{"day":309,"nt":{"book":"Psalm","chapter":27},"ot":{"book":"Isaiah","chapter":26},"ps":{"book":"Luke","chapter":18},"theme":"The Lord is my light \u2014 one thing I ask"},{"day":310,"nt":{"book":"Psalm","chapter":46},"ot":{"book":"Isaiah","chapter":37},"ps":{"book":"Revelation","chapter":21},"theme":"God is our refuge \u2014 be still"},{"day":311,"nt":{"book":"Psalm","chapter":51},"ot":{"book":"2 Samuel","chapter":12},"ps":{"book":"Luke","chapter":15},"theme":"Create in me a clean heart"},{"day":312,"nt":{"book":"Psalm","chapter":63},"ot":{"book":"Deuteronomy","chapter":8},"ps":{"book":"Matthew","chapter":6},"theme":"My soul thirsts for you"},{"day":313,"nt":{"book":"Psalm","chapter":73},"ot":{"book":"Job","chapter":21},"ps":{"book":"Luke","chapter":16},"theme":"I was envious \u2014 then I entered the sanctuary"},{"day":314,"nt":{"book":"Psalm","chapter":84},"ot":{"book":"Isaiah","chapter":40},"ps":{"book":"Philippians","chapter":1},"theme":"Better a day in your courts"},{"day":315,"nt":{"book":"Psalm","chapter":90},"ot":{"book":"Ecclesiastes","chapter":12},"ps":{"book":"Revelation","chapter":22},"theme":"Teach us to number our days"},{"day":316,"nt":{"book":"Psalm","chapter":91},"ot":{"book":"Deuteronomy","chapter":33},"ps":{"book":"Matthew","chapter":4},"theme":"He will command his angels"},{"day":317,"nt":{"book":"Psalm","chapter":103},"ot":{"book":"Exodus","chapter":34},"ps":{"book":"Romans","chapter":8},"theme":"The Lord is compassionate and gracious"},{"day":318,"nt":{"book":"Psalm","chapter":119},"ot":{"book":"Deuteronomy","chapter":17},"ps":{"book":"John","chapter":17},"theme":"Your word is a lamp \u2014 I love your commands"},{"day":319,"nt":{"book":"Psalm","chapter":139},"ot":{"book":"Job","chapter":10},"ps":{"book":"Luke","chapter":1},"theme":"You knit me together in the womb"},{"day":320,"nt":{"book":"Psalm","chapter":150},"ot":{"book":"Nehemiah","chapter":12},"ps":{"book":"Revelation","chapter":19},"theme":"Let everything that has breath praise the Lord"},{"day":321,"nt":{"book":"Isaiah","chapter":1},"ot":{"book":"Amos","chapter":5},"ps":{"book":"Psalm","chapter":50},"theme":"Come now, let us reason together"},{"day":322,"nt":{"book":"Isaiah","chapter":6},"ot":{"book":"Revelation","chapter":4},"ps":{"book":"Psalm","chapter":99},"theme":"Holy, holy, holy \u2014 here am I"},{"day":323,"nt":{"book":"Isaiah","chapter":9},"ot":{"book":"Matthew","chapter":4},"ps":{"book":"Psalm","chapter":72},"theme":"Unto us a child is born"},{"day":324,"nt":{"book":"Isaiah","chapter":40},"ot":{"book":"Mark","chapter":1},"ps":{"book":"Psalm","chapter":103},"theme":"Comfort my people \u2014 they shall mount up with wings"},{"day":325,"nt":{"book":"Isaiah","chapter":43},"ot":{"book":"Romans","chapter":8},"ps":{"book":"Psalm","chapter":23},"theme":"Fear not \u2014 I have redeemed you"},{"day":326,"nt":{"book":"Isaiah","chapter":53},"ot":{"book":"Mark","chapter":15},"ps":{"book":"Psalm","chapter":22},"theme":"He was pierced for our transgressions"},{"day":327,"nt":{"book":"Isaiah","chapter":55},"ot":{"book":"John","chapter":6},"ps":{"book":"Psalm","chapter":34},"theme":"Come, buy wine and milk without price"},{"day":328,"nt":{"book":"Isaiah","chapter":61},"ot":{"book":"Luke","chapter":4},"ps":{"book":"Psalm","chapter":146},"theme":"The Spirit of the Lord is upon me"},{"day":329,"nt":{"book":"Isaiah","chapter":65},"ot":{"book":"Revelation","chapter":21},"ps":{"book":"Psalm","chapter":87},"theme":"Behold, I create all things new"},{"day":330,"nt":{"book":"Jeremiah","chapter":29},"ot":{"book":"Romans","chapter":8},"ps":{"book":"Psalm","chapter":137},"theme":"Plans to prosper you \u2014 seek the peace of the city"},{"day":331,"nt":{"book":"Jeremiah","chapter":31},"ot":{"book":"Hebrews","chapter":8},"ps":{"book":"Psalm","chapter":51},"theme":"A new covenant \u2014 I will write it on their hearts"},{"day":332,"nt":{"book":"Lamentations","chapter":3},"ot":{"book":"2 Corinthians","chapter":4},"ps":{"book":"Psalm","chapter":88},"theme":"Great is your faithfulness"},{"day":333,"nt":{"book":"Ezekiel","chapter":36},"ot":{"book":"Titus","chapter":3},"ps":{"book":"Psalm","chapter":51},"theme":"New heart, new spirit \u2014 I will do it"},{"day":334,"nt":{"book":"Ezekiel","chapter":37},"ot":{"book":"1 Corinthians","chapter":15},"ps":{"book":"Psalm","chapter":30},"theme":"Dry bones \u2014 can these bones live?"},{"day":335,"nt":{"book":"Ezekiel","chapter":47},"ot":{"book":"Revelation","chapter":22},"ps":{"book":"Psalm","chapter":46},"theme":"Water flowing from the temple \u2014 everything lives"},{"day":336,"nt":{"book":"Daniel","chapter":1},"ot":{"book":"Acts","chapter":5},"ps":{"book":"Psalm","chapter":119},"theme":"Resolved \u2014 Daniel and his friends"},{"day":337,"nt":{"book":"Daniel","chapter":3},"ot":{"book":"Hebrews","chapter":11},"ps":{"book":"Psalm","chapter":23},"theme":"The fourth man in the furnace"},{"day":338,"nt":{"book":"Daniel","chapter":6},"ot":{"book":"Acts","chapter":12},"ps":{"book":"Psalm","chapter":34},"theme":"The lions' den \u2014 God shut their mouths"},{"day":339,"nt":{"book":"Daniel","chapter":7},"ot":{"book":"Revelation","chapter":1},"ps":{"book":"Psalm","chapter":2},"theme":"One like a son of man"},{"day":340,"nt":{"book":"Jonah","chapter":1},"ot":{"book":"Matthew","chapter":12},"ps":{"book":"Psalm","chapter":139},"theme":"Flee from the Lord \u2014 sign of Jonah"},{"day":341,"nt":{"book":"Jonah","chapter":3},"ot":{"book":"Luke","chapter":15},"ps":{"book":"Psalm","chapter":32},"theme":"Nineveh repents \u2014 God relents"},{"day":342,"nt":{"book":"Micah","chapter":5},"ot":{"book":"Matthew","chapter":2},"ps":{"book":"Psalm","chapter":132},"theme":"Bethlehem \u2014 out of you will come a ruler"},{"day":343,"nt":{"book":"Micah","chapter":6},"ot":{"book":"James","chapter":2},"ps":{"book":"Psalm","chapter":15},"theme":"Do justice, love mercy, walk humbly"},{"day":344,"nt":{"book":"Habakkuk","chapter":3},"ot":{"book":"Romans","chapter":1},"ps":{"book":"Psalm","chapter":77},"theme":"Though the fig tree does not blossom \u2014 I will rejoice"},{"day":345,"nt":{"book":"Zephaniah","chapter":3},"ot":{"book":"Luke","chapter":4},"ps":{"book":"Psalm","chapter":47},"theme":"He will rejoice over you with singing"},{"day":346,"nt":{"book":"Zechariah","chapter":9},"ot":{"book":"John","chapter":12},"ps":{"book":"Psalm","chapter":118},"theme":"Your king comes \u2014 humble, on a donkey"},{"day":347,"nt":{"book":"Malachi","chapter":3},"ot":{"book":"Luke","chapter":1},"ps":{"book":"Psalm","chapter":72},"theme":"The messenger prepares the way"},{"day":348,"nt":{"book":"Isaiah","chapter":7},"ot":{"book":"Matthew","chapter":1},"ps":{"book":"Psalm","chapter":113},"theme":"A virgin will conceive"},{"day":349,"nt":{"book":"Isaiah","chapter":9},"ot":{"book":"Luke","chapter":2},"ps":{"book":"Psalm","chapter":98},"theme":"Wonderful Counselor, Mighty God"},{"day":350,"nt":{"book":"Micah","chapter":5},"ot":{"book":"John","chapter":1},"ps":{"book":"Psalm","chapter":96},"theme":"Bethlehem \u2014 and the Word became flesh"},{"day":351,"nt":{"book":"Isaiah","chapter":11},"ot":{"book":"Revelation","chapter":5},"ps":{"book":"Psalm","chapter":72},"theme":"The shoot from the stump of Jesse"},{"day":352,"nt":{"book":"Deuteronomy","chapter":34},"ot":{"book":"Matthew","chapter":28},"ps":{"book":"Psalm","chapter":90},"theme":"Moses saw but did not enter \u2014 go therefore"},{"day":353,"nt":{"book":"Joshua","chapter":1},"ot":{"book":"Acts","chapter":1},"ps":{"book":"Psalm","chapter":27},"theme":"Be strong and courageous \u2014 you will receive power"},{"day":354,"nt":{"book":"Nehemiah","chapter":1},"ot":{"book":"1 Thessalonians","chapter":1},"ps":{"book":"Psalm","chapter":126},"theme":"The wall rebuilt \u2014 your faith is known"},{"day":355,"nt":{"book":"Psalm","chapter":23},"ot":{"book":"John","chapter":21},"ps":{"book":"Proverbs","chapter":3},"theme":"The Lord is my shepherd \u2014 do you love me?"},{"day":356,"nt":{"book":"Isaiah","chapter":40},"ot":{"book":"Romans","chapter":8},"ps":{"book":"Psalm","chapter":23},"theme":"Nothing can separate us \u2014 soar on wings like eagles"},{"day":357,"nt":{"book":"Ezekiel","chapter":34},"ot":{"book":"Luke","chapter":15},"ps":{"book":"Psalm","chapter":100},"theme":"I myself will search for my sheep"},{"day":358,"nt":{"book":"Isaiah","chapter":25},"ot":{"book":"Revelation","chapter":19},"ps":{"book":"Psalm","chapter":23},"theme":"He will swallow up death \u2014 the wedding feast"},{"day":359,"nt":{"book":"Genesis","chapter":1},"ot":{"book":"John","chapter":1},"ps":{"book":"Psalm","chapter":8},"theme":"In the beginning \u2014 the Word"},{"day":360,"nt":{"book":"Isaiah","chapter":65},"ot":{"book":"Revelation","chapter":21},"ps":{"book":"Psalm","chapter":148},"theme":"New heavens and new earth \u2014 behold, I make all things new"},{"day":361,"nt":{"book":"Deuteronomy","chapter":31},"ot":{"book":"Hebrews","chapter":13},"ps":{"book":"Psalm","chapter":46},"theme":"I will never leave you nor forsake you"},{"day":362,"nt":{"book":"Proverbs","chapter":3},"ot":{"book":"Philippians","chapter":4},"ps":{"book":"Psalm","chapter":131},"theme":"Trust in the Lord \u2014 think on these things"},{"day":363,"nt":{"book":"Isaiah","chapter":43},"ot":{"book":"2 Corinthians","chapter":5},"ps":{"book":"Psalm","chapter":40},"theme":"New creation \u2014 I am doing a new thing"},{"day":364,"nt":{"book":"Lamentations","chapter":3},"ot":{"book":"Romans","chapter":15},"ps":{"book":"Psalm","chapter":130},"theme":"Great is your faithfulness \u2014 hope"},{"day":365,"nt":{"book":"Isaiah","chapter":55},"ot":{"book":"Revelation","chapter":22},"ps":{"book":"Psalm","chapter":150},"theme":"Come \u2014 whoever is thirsty, let him come"}];
+
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const VERSES=[
+  {text:'"Come to me, all you who are weary and burdened, and I will give you rest."',ref:'Matthew 11:28'},
+  {text:'"The Lord is my shepherd; I shall not want."',ref:'Psalm 23:1'},
+  {text:'"Trust in the Lord with all your heart and lean not on your own understanding."',ref:'Proverbs 3:5'},
+  {text:'"I can do all things through Christ who strengthens me."',ref:'Philippians 4:13'},
+  {text:'"Be still, and know that I am God."',ref:'Psalm 46:10'},
+  {text:'"For I know the plans I have for you," declares the Lord, "plans to prosper you and not to harm you."',ref:'Jeremiah 29:11'},
+  {text:'"Do not be anxious about anything, but in every situation, present your requests to God."',ref:'Philippians 4:6'},
+];
+// ─── READING PLAN HELPERS ────────────────────────────────────────────────────
+function getTodayPlan(){
+  const day = Math.min(Math.max(S.currentDay||1, 1), 365);
+  return READING_PLAN[day-1] || READING_PLAN[0];
+}
+function planRef(p){ return p.book+' '+p.chapter; }
+function buildScriptureGuide(plan){
+  return `<div style="margin-bottom:12px">
+    <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Day ${plan.day} · ${plan.theme}</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="background:var(--green-bg);border:1px solid rgba(74,124,89,0.2);border-radius:8px;padding:10px 12px">
+        <div style="font-size:11px;font-weight:600;color:var(--green-text);margin-bottom:3px">📖 New Testament</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text)">${planRef(plan.nt)}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">Main passage — read slowly</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:3px">📜 Old Testament</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text)">${planRef(plan.ot)}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">Background & fulfillment</div>
+      </div>
+      <div style="background:var(--gold-bg);border:1px solid rgba(154,116,32,0.15);border-radius:8px;padding:10px 12px">
+        <div style="font-size:11px;font-weight:600;color:var(--gold-text);margin-bottom:3px">🎵 ${plan.ps.book}</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text)">${planRef(plan.ps)}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">Wisdom & prayer anchor</div>
+      </div>
+    </div>
+  </div>
+  <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-top:4px">Read the NT passage first and sit with it. Then read the OT to see what it was pointing to. Close with the ${plan.ps.book.toLowerCase()} as your prayer.</div>`;
+}
+
+const PRACTICES=[
+  {id:'scripture',name:'Scripture reading',desc:'5 min in the Word',icon:'📖',duration:300,hasTimer:true,
+   guide:`loading`},
+  {id:'prayer',name:'Prayer',desc:'Still yourself before God',icon:'🙏',duration:300,hasTimer:true,
+   guide:`<b>Adoration</b> — Praise God for who He is.<br><br><b>Confession</b> — Bring what needs forgiving.<br><br><b>Thanksgiving</b> — Name three things from today.<br><br><b>Supplication</b> — Ask boldly for yourself and others.<span class="scripture">"Do not be anxious about anything, but in every situation, present your requests to God." — Philippians 4:6</span>`},
+  {id:'gratitude',name:'Gratitude',desc:'Name three gifts from today',icon:'🤍',duration:0,hasTimer:false,
+   guide:`Write three specific things God has given you today. Gratitude trains your eyes to see grace everywhere.<span class="scripture">"Give thanks in all circumstances; for this is God's will for you in Christ Jesus." — 1 Thessalonians 5:18</span>`},
+  {id:'memory',name:'Verse memory',desc:'Review your memory verse',icon:'💬',duration:120,hasTimer:true,
+   guide:`<b>This week's verse</b><span class="scripture">"I can do all things through Christ who strengthens me." — Philippians 4:13</span>Say it aloud three times. Cover it and try to recall it. Repeat until it's yours.`},
+  {id:'examen',name:'Examen',desc:'Review your day with God',icon:'🌙',duration:300,hasTimer:true,
+   guide:`Review your day in God's presence — 5 minutes that changes how you see your life.<br><br>1. <b>Gratitude</b> — What are you most thankful for today?<br>2. <b>Awareness</b> — Where did you feel God's presence?<br>3. <b>Low point</b> — Bring it to God without shame.<br>4. <b>Tomorrow</b> — What grace do you need?`},
+];
+const REST_CHALLENGES=[
+  {id:'fast1',name:'A day of fasting',icon:'✦',reward:1,
+   desc:'Fast one meal and use that time to pray. Keep it between you and God.',
+   scripture:'"When you fast, put oil on your head and wash your face." — Matthew 6:17',goal:1},
+  {id:'psalm7',name:'Complete 7 days of reading',icon:'📜',reward:1,
+   desc:'Follow the daily reading plan for 7 days in a row. Each day has a NT passage, OT background, and a Psalm or Proverb.',
+   scripture:'"Your word is a lamp to my feet and a light to my path." — Psalm 119:105',goal:7},
+  {id:'silence30',name:'30 minutes of silence',icon:'🕊️',reward:1,
+   desc:'No phone. No music. Just you and God. Sit, breathe, and wait.',
+   scripture:'"Be still, and know that I am God." — Psalm 46:10',goal:1},
+  {id:'memorize3',name:'Memorize 3 verses',icon:'💡',reward:2,
+   desc:'Choose three verses that speak to where you are right now. Memorize them word for word.',
+   scripture:'"I have hidden your word in my heart." — Psalm 119:11',goal:1},
+  {id:'worship30',name:'30 minutes of worship',icon:'🎵',reward:1,
+   desc:'Put on worship music or sing on your own for 30 minutes. Make it an offering.',
+   scripture:'"Shout for joy to the Lord, all the earth." — Psalm 100:1',goal:1},
+];
+const SHEEP_CHALLENGES=[
+  {id:'serve1',name:'An act of service',icon:'🤲',
+   desc:'Do something for someone else with no expectation of return. Keep it between you and God.',
+   scripture:'"The greatest among you will be your servant." — Matthew 23:11',goal:1},
+  {id:'pray3',name:'Pray for 3 others by name',icon:'🙌',
+   desc:'One you love, one who challenges you, one who doesn\'t know Jesus. Pray for them this week.',
+   scripture:'"Pray for those who persecute you." — Matthew 5:44',goal:1},
+  {id:'letter1',name:'Write an encouragement letter',icon:'✉️',
+   desc:'Write a handwritten note to someone who needs it. Send it.',
+   scripture:'"Encourage one another and build each other up." — 1 Thessalonians 5:11',goal:1},
+  {id:'forgive1',name:'An act of forgiveness',icon:'🕊️',
+   desc:'Choose to forgive someone — out loud, in prayer, or in person. Release it to God.',
+   scripture:'"Forgive as the Lord has forgiven you." — Colossians 3:13',goal:1},
+  {id:'share1',name:'Share your faith',icon:'💬',
+   desc:'Tell someone — friend, family, or stranger — one thing God has done in your life this week.',
+   scripture:'"Always be prepared to give an answer for the hope that you have." — 1 Peter 3:15',goal:1},
+  {id:'hospitality1',name:'Open your table',icon:'🍽️',
+   desc:'Invite someone for a meal. Make room for them. Presence is the gift.',
+   scripture:'"Practice hospitality." — Romans 12:13',goal:1},
+];
+const REFLECT_PROMPTS={
+  word:'What did God speak to you through His Word today? What verse stayed with you?',
+  prayer:'What are you bringing to God right now? What are you asking, confessing, trusting?',
+  faith:'Where did you live out your faith today? Where did you fall short — and what do you need?',
+  stillness:'What did you notice in the quiet today? What anxieties loosened when you stopped?',
+  community:'How did you love someone today? Who is God putting on your heart to serve or pray for?',
+  all:'Where did you notice God today? What are you carrying that needs to be laid down?',
+};
+const SHEEP_COLORS=['#f5f0e8','#e8d5b0','#c8d0c0','#d4c8e0','#e0c8c8','#c8e0d0','#d8d0b8','#e0d8c0'];
+const CIN_CAPTIONS=['Your seed is planted.','The first leaves unfurl.','Roots go deep.','Branches reach wide.','A harvest of faithfulness.'];
+
+// ─── MONTH 1 DEVOTIONAL CONTENT ─────────────────────────────────────────────
+const MONTH1={"meta":{"title":"Come: Learning from Jesus","month":1,"year":1,"theme":"Core Formation · Months 1–3: Learning from Jesus"},"weekday":[{"verse":"\"Come to me, all who labor and are heavy laden, and I will give you rest.\"","verseRef":"Matthew 11:28 ESV","devotional":"Jesus doesn't say 'figure it out' or 'try harder.' He says come. The invitation is personal — to him, not to a program or a practice. Jon Mark Comer writes that the first move of apprenticeship is simply proximity: getting close enough to Jesus to be shaped by him. Today's rhythm isn't about doing more. It's about coming.","goingDeeper":"\"Take my yoke upon you, and learn from me, for I am gentle and lowly in heart, and you will find rest for your souls.\"","goingDeeperRef":"Matthew 11:29 ESV","reflection":"What would it look like today to come to Jesus with one thing you've been carrying alone?"},{"verse":"\"And he said to them, 'Follow me, and I will make you fishers of men.'\"","verseRef":"Matthew 4:19 ESV","devotional":"The call to follow Jesus is a call to apprenticeship — not a course you take, but a life you enter. Notice what Jesus doesn't say: he doesn't say 'believe the right things about me' or 'attend my gatherings.' He says follow. That's a movement word. Apprenticeship begins with putting your feet behind his.","goingDeeper":"\"Whoever says he abides in him ought to walk in the same way in which he walked.\"","goingDeeperRef":"1 John 2:6 ESV","reflection":"Where today could you literally slow down, pay attention, and follow the pace Jesus seems to be setting?"},{"verse":"\"My sheep hear my voice, and I know them, and they follow me.\"","verseRef":"John 10:27 ESV","devotional":"Learning from Jesus begins with learning to hear him. Dallas Willard wrote that hearing God's voice isn't rare or mystical — it's the normal experience of a person who has learned to be still. The sheep don't strain to hear the shepherd. They've simply spent enough time near him that his voice is familiar. Familiarity is the fruit of proximity.","goingDeeper":"\"Be still, and know that I am God.\"","goingDeeperRef":"Psalm 46:10 ESV","reflection":"What is the most common thing that drowns out Jesus's voice in your day? What would it take to quiet it?"},{"verse":"\"Blessed are the poor in spirit, for theirs is the kingdom of heaven.\"","verseRef":"Matthew 5:3 ESV","devotional":"The Sermon on the Mount is Jesus's most complete description of what apprenticeship produces. But it begins here, with poverty of spirit — the honest admission that you don't have what you need on your own. This isn't self-hatred. It's the open hand that makes receiving possible. Comer calls it 'spiritual bankruptcy as the doorway to the kingdom.' You can't be filled if you're convinced you're already full.","goingDeeper":"\"For thus says the One who is high and lifted up, who inhabits eternity, whose name is Holy: I dwell in the high and holy place, and also with him who is of a contrite and lowly spirit.\"","goingDeeperRef":"Isaiah 57:15 ESV","reflection":"Where are you most tempted to pretend you have it together spiritually? What would poverty of spirit look like there?"},{"verse":"\"For I have given you an example, that you also should do just as I have done to you.\"","verseRef":"John 13:15 ESV","devotional":"Jesus says the goal of following him isn't just to admire what he did but to actually do it. The apprentice doesn't just study the master — eventually, they work alongside the master. This is the audacity of Christian formation: that ordinary people, through the practice of proximity and obedience, begin to look, act, and love like Jesus. Not because they're exceptional but because they stayed close.","goingDeeper":"\"A disciple is not above his teacher, but everyone when he is fully trained will be like his teacher.\"","goingDeeperRef":"Luke 6:40 ESV","reflection":"Think of one person Jesus loved in a way that surprised people. What would it look like to love that kind of person the same way today?"},{"verse":"\"In the morning, rising very early, he departed and went out to a desolate place, and there he prayed.\"","verseRef":"Mark 1:35 ESV","devotional":"Jesus was not without demands on his time. The very next verses describe people searching frantically for him. Yet here he is — before the day begins, alone, praying. This wasn't a spiritual discipline he did because he was Jesus. This was how Jesus stayed Jesus. He needed solitude. If he did, so do you. The practice of early, unhurried time with the Father is the engine that powered everything Jesus did.","goingDeeper":"\"But when you pray, go into your room and shut the door and pray to your Father who is in secret. And your Father who sees in secret will reward you.\"","goingDeeperRef":"Matthew 6:6 ESV","reflection":"When is the quietest moment in your day? Have you given it to God, or let the noise claim it first?"},{"verse":"\"Man shall not live by bread alone, but by every word that comes from the mouth of God.\"","verseRef":"Matthew 4:4 ESV","devotional":"Jesus quotes Deuteronomy 8:3 from memory, in the wilderness, under direct spiritual pressure. Scripture wasn't a resource Jesus reached for in emergencies — it was so thoroughly a part of him that it came out naturally when everything else was stripped away. That kind of availability is only built through years of slow, daily eating. You can't rush the formation that comes from hiding the word in your heart.","goingDeeper":"\"I have stored up your word in my heart, that I might not sin against you.\"","goingDeeperRef":"Psalm 119:11 ESV","reflection":"What verse have you returned to most this year? What does it tell you about what God is forming in you?"},{"verse":"\"Not everyone who says to me, 'Lord, Lord,' will enter the kingdom of heaven, but the one who does the will of my Father.\"","verseRef":"Matthew 7:21 ESV","devotional":"This is one of Jesus's most uncomfortable sayings, and it's meant to be. The issue isn't sincerity — many sincere people say 'Lord, Lord.' The issue is whether the relationship is real enough to have changed how you actually live. Comer says the test of apprenticeship isn't what you say about Jesus but what you do when it's hard to do what Jesus would do. Formation is always proven in the ordinary, unremarkable moments.","goingDeeper":"\"But be doers of the word, and not hearers only, deceiving yourselves.\"","goingDeeperRef":"James 1:22 ESV","reflection":"Where is there a gap right now between what you say you believe and how you're actually living? Name it honestly."},{"verse":"\"Therefore whoever hears these words of mine and does them will be like a wise man who built his house on the rock.\"","verseRef":"Matthew 7:24 ESV","devotional":"The Sermon on the Mount ends with a call to build — and the material isn't belief, it's obedience. The storm doesn't test what you know. It tests what you've built your life on. Willard wrote that spiritual disciplines are the construction work done before the storm arrives. You don't build a foundation during the hurricane; you build it in the quiet ordinary days so the hurricane has nothing to destroy.","goingDeeper":"\"Everyone then who hears these words of mine and does not do them will be like a foolish man who built his house on the sand.\"","goingDeeperRef":"Matthew 7:26 ESV","reflection":"What is one area of your life that feels unstable right now? What would it look like to build something more solid there, starting this week?"},{"verse":"\"When he saw the crowds, he had compassion for them, because they were harassed and helpless, like sheep without a shepherd.\"","verseRef":"Matthew 9:36 ESV","devotional":"Learning from Jesus means learning to see people the way he sees them. Not as interruptions. Not as problems to solve. Not as projects. He looks at the crowd — the same crowd that will exhaust him, misunderstand him, and eventually abandon him — and feels compassion. That word in Greek is splanchnizomai: a gut-level, visceral ache. Apprentices of Jesus slowly have their vision corrected to see what he sees.","goingDeeper":"\"Therefore, as God's chosen people, holy and dearly loved, clothe yourselves with compassion, kindness, humility, gentleness and patience.\"","goingDeeperRef":"Colossians 3:12 ESV","reflection":"Who in your life right now do you find it hardest to feel compassion for? Ask Jesus to let you see them the way he does."},{"verse":"\"Truly, I say to you, unless you turn and become like children, you will never enter the kingdom of heaven.\"","verseRef":"Matthew 18:3 ESV","devotional":"Children don't earn their place at the table. They receive everything. They ask without embarrassment. They trust without needing to understand the full picture. Somewhere along the way most of us replace childlike trust with religious competence — and Jesus says that's the wrong direction. The kingdom runs on receptivity, not performance. Turn back. Become small again. It's not regression; it's the way in.","goingDeeper":"\"Humble yourselves before the Lord, and he will exalt you.\"","goingDeeperRef":"James 4:10 ESV","reflection":"Is there an area of your faith where you've become more professional and less childlike? What would trusting like a child look like there?"},{"verse":"\"But seek first the kingdom of God and his righteousness, and all these things will be added to you.\"","verseRef":"Matthew 6:33 ESV","devotional":"The hurried life, Comer argues, is the result of seeking too many things. We try to seek the kingdom and financial security and personal comfort and other people's approval — all at once. Jesus doesn't say the other things don't matter; he says they belong in a particular order. First things first. When the kingdom is genuinely first, everything else finds its right place. But that ordering is a daily practice, not a one-time decision.","goingDeeper":"\"You keep him in perfect peace whose mind is stayed on you, because he trusts in you.\"","goingDeeperRef":"Isaiah 26:3 ESV","reflection":"What are you most anxious about today? How would seeking the kingdom first change how you hold that anxiety?"},{"verse":"\"And he said to all, 'If anyone would come after me, let him deny himself and take up his cross daily and follow me.'\"","verseRef":"Luke 9:23 ESV","devotional":"The word 'daily' is the part we skip over. Dying to self isn't a dramatic one-time moment — it's a thousand small daily choices to lay down the demand to be right, to be comfortable, to be first. Willard called these small deaths 'the curriculum of the kingdom.' You don't become like Jesus in a weekend. You become like him in the ordinary Tuesdays and Wednesdays where no one is watching.","goingDeeper":"\"I have been crucified with Christ. It is no longer I who live, but Christ who lives in me.\"","goingDeeperRef":"Galatians 2:20 ESV","reflection":"What is one thing your flesh wants today that following Jesus asks you to lay down? Name it specifically."},{"verse":"\"For even the Son of Man came not to be served but to serve, and to give his life as a ransom for many.\"","verseRef":"Mark 10:45 ESV","devotional":"In a world organized around upward mobility, Jesus moves downward. In a culture where everyone is trying to be served, he comes to serve. This is not just a virtue to admire — it's a pattern to inhabit. The apprentice who follows Jesus downward discovers something the upwardly mobile never find: that the basin and the towel are where the kingdom actually lives. Greatness in Jesus's economy is measured by the dirt on your knees.","goingDeeper":"\"Do nothing from selfish ambition or conceit, but in humility count others more significant than yourselves.\"","goingDeeperRef":"Philippians 2:3 ESV","reflection":"What's one concrete act of service you could do today that would cost you something — time, comfort, or recognition?"},{"verse":"\"And he withdrew from them about a stone's throw, and knelt down and prayed.\"","verseRef":"Luke 22:41 ESV","devotional":"This is Gethsemane — the hardest night of Jesus's life. And what does he do? He withdraws. He kneels. He prays. The practice of solitary prayer wasn't something Jesus picked up in the good times; it was the foundation that held him in the worst ones. Comer writes that the spiritual practices we build in the ordinary seasons are the only thing that holds us when the extraordinary ones arrive. You are building now for a storm you don't yet know is coming.","goingDeeper":"\"Do not be anxious about anything, but in everything by prayer and supplication with thanksgiving let your requests be made known to God.\"","goingDeeperRef":"Philippians 4:6 ESV","reflection":"If you faced the hardest possible thing tomorrow, would your prayer life be deep enough to hold you? What would it take to deepen it?"},{"verse":"\"Jesus said to him, 'I am the way, and the truth, and the life. No one comes to the Father except through me.'\"","verseRef":"John 14:6 ESV","devotional":"The way is a person, not a path. The truth is a person, not a proposition. The life is a person, not a program. This is the central claim of Christian apprenticeship: that what we need isn't better information or stronger willpower — it's proximity to the one who is himself the answer. You can't separate the teaching from the teacher. You don't just learn what Jesus knows; you learn to be with Jesus until you become someone who knows what he knows.","goingDeeper":"\"In him was life, and the life was the light of men.\"","goingDeeperRef":"John 1:4 ESV","reflection":"How much of your spiritual life is about information about Jesus versus actual time with Jesus? What would shift if you gave more weight to the second?"},{"verse":"\"Remain in me, as I also remain in you. No branch can bear fruit by itself; it must remain in the vine.\"","verseRef":"John 15:4 ESV","devotional":"Abiding is the opposite of striving. The branch doesn't work to produce fruit — it stays connected, and fruit is the natural result of that connection. Willard's language for this was 'the with-God life': not a life constantly doing things for God, but a life doing everything in the company of God. The question isn't 'how do I produce more?' The question is 'am I staying connected to the source?'","goingDeeper":"\"Whoever abides in me and I in him, he it is that bears much fruit, for apart from me you can do nothing.\"","goingDeeperRef":"John 15:5 ESV","reflection":"What is one practice that most consistently helps you feel connected to Jesus? How consistently are you doing it?"},{"verse":"\"For I was hungry and you gave me food, I was thirsty and you gave me drink, I was a stranger and you welcomed me.\"","verseRef":"Matthew 25:35 ESV","devotional":"Jesus places himself in the face of the hungry, the thirsty, the stranger, the sick, the prisoner. Learning from Jesus means learning to look for him in the last places we'd expect. Comer calls this 'Jesus hidden in the poor' — a mystical claim that when we serve the most vulnerable, we are somehow, mysteriously, serving him. Formation doesn't happen only in quiet morning devotions. It also happens at a food pantry, in a hospital waiting room, across from someone no one else makes time for.","goingDeeper":"\"Religion that is pure and undefiled before God the Father is this: to visit orphans and widows in their affliction, and to keep oneself unstained from the world.\"","goingDeeperRef":"James 1:27 ESV","reflection":"Who is the most marginalized or overlooked person in your regular life? What would it look like to see Jesus in them this week?"},{"verse":"\"For where two or three are gathered in my name, there am I among them.\"","verseRef":"Matthew 18:20 ESV","devotional":"Apprenticeship to Jesus is never purely solitary. You were not designed to follow Jesus alone. The small gathering — two or three, not the impressive crowd — is where Jesus promises his presence. Community isn't a supplement to your spiritual life; it's one of the primary places Jesus shows up and does his forming work. The things that can't be broken alone can be broken in the presence of people who love you and speak truth to you.","goingDeeper":"\"And let us consider how to stir up one another to love and good works, not neglecting to meet together.\"","goingDeeperRef":"Hebrews 10:24–25 ESV","reflection":"Who are the two or three people in your life with whom you are genuinely known? What does your spiritual life look like when you're honest with them?"},{"verse":"\"Peace I leave with you; my peace I give to you. Not as the world gives do I give to you. Let not your hearts be troubled, neither let them be afraid.\"","verseRef":"John 14:27 ESV","devotional":"The peace Jesus gives is not the absence of difficulty. He gives it in the upper room, hours before his arrest. It's a peace that coexists with trouble — a deep settledness that isn't shaken by circumstances because it isn't produced by circumstances. Willard called it 'the life of the Kingdom in the soul.' You can't manufacture it; it's given. But you can close yourself to it by filling every moment with noise. Peace requires space to land.","goingDeeper":"\"And the peace of God, which surpasses all understanding, will guard your hearts and your minds in Christ Jesus.\"","goingDeeperRef":"Philippians 4:7 ESV","reflection":"How much of your day is spent in noise — screens, news, busyness? What would it take to create five minutes of genuine quiet today?"},{"verse":"\"But I say to you, Love your enemies and pray for those who persecute you.\"","verseRef":"Matthew 5:44 ESV","devotional":"This is the command that proves formation is supernatural. You cannot love your enemy by trying harder. You can only love them by becoming someone different — someone who has been so thoroughly loved by Jesus that love is available even for people who don't deserve it. The command isn't cruelty; it's a description of what transformed people are capable of. Apprenticeship produces people who can do what the unformed cannot.","goingDeeper":"\"We love because he first loved us.\"","goingDeeperRef":"1 John 4:19 ESV","reflection":"Is there someone you would currently describe as an enemy or adversary? What would it mean to genuinely pray for them today?"},{"verse":"\"You did not choose me, but I chose you and appointed you that you should go and bear fruit and that your fruit should abide.\"","verseRef":"John 15:16 ESV","devotional":"The initiative in this relationship was never yours. He chose you. This is not a small thing. Before you were disciplined enough to seek him, before you were faithful enough to follow him, before you had anything to offer — he already wanted you. Formation begins and ends with that gift. Striving that forgets election becomes exhausting religion. Rest that remembers election becomes grateful obedience.","goingDeeper":"\"For we are his workmanship, created in Christ Jesus for good works, which God prepared beforehand, that we should walk in them.\"","goingDeeperRef":"Ephesians 2:10 ESV","reflection":"When you pray today, start with: 'You chose me.' Sit with that for sixty seconds before you say anything else. What comes up?"},{"verse":"\"The thief comes only to steal and kill and destroy. I came that they may have life and have it abundantly.\"","verseRef":"John 10:10 ESV","devotional":"The abundant life Jesus describes isn't the American dream with a Bible verse attached. It's the life of the Kingdom — rich in the things that last, free from the anxiety of things that don't. Comer describes it as 'life that is truly life' — not just more activity but deeper aliveness, a quality of presence and peace and love that money can't buy and busyness can't reach. It grows slowly, in the soil of spiritual practice, over years.","goingDeeper":"\"Now to him who is able to do far more abundantly than all that we ask or think, according to the power at work within us.\"","goingDeeperRef":"Ephesians 3:20 ESV","reflection":"What does 'abundant life' look like to you right now — not ideally, but honestly? How close is your life to that?"},{"verse":"\"And he said to them, 'Come away by yourselves to a desolate place and rest a while.'\"","verseRef":"Mark 6:31 ESV","devotional":"Jesus commands rest. Not earns it. Not stumbles into it. Commands it. He looks at his disciples — who have just returned from a demanding mission — and his first instruction is: stop. Come away. Be with me. In a culture that treats rest as laziness, Jesus treats it as obedience. The disciples cannot pour out what they haven't received. Neither can you. Rest is not the opposite of faithfulness; it is one of its expressions.","goingDeeper":"\"In returning and rest you shall be saved; in quietness and in trust shall be your strength.\"","goingDeeperRef":"Isaiah 30:15 ESV","reflection":"When did you last truly rest — not scroll, not consume, but genuinely stop? What is your honest relationship with rest right now?"},{"verse":"\"And behold, I am with you always, to the end of the age.\"","verseRef":"Matthew 28:20 ESV","devotional":"The final words of Matthew's Gospel are not a command but a promise — and they are the foundation on which every other command rests. Go, make disciples, baptize, teach — all of it is possible only because of this: I am with you. Always. The whole logic of Christian formation rests on the real, present, moment-by-moment companionship of Jesus. You are not doing this alone. You were never doing this alone.","goingDeeper":"\"Where shall I go from your Spirit? Or where shall I flee from your presence?\"","goingDeeperRef":"Psalm 139:7 ESV","reflection":"As you close out this month, what does it mean to you personally that Jesus is with you always — not just in the spiritual moments, but in the hard, ordinary, mundane ones?"}],"saturday":[{"verse":"\"Come to me, all who labor and are heavy laden, and I will give you rest. Take my yoke upon you, and learn from me, for I am gentle and lowly in heart, and you will find rest for your souls. For my yoke is easy, and my burden is light.\"","verseRef":"Matthew 11:28–30 ESV","devotional":"These verses are the heartbeat of Month 1. Jesus offers rest not as a reward for the disciplined but as a gift for the exhausted. The yoke he describes isn't the yoke of the Pharisees — heavy with requirements, crushing in its demands. It is the yoke of a gentle teacher who walks alongside you, matching your pace, bearing the weight with you. Comer writes that the problem isn't that we're working too hard — it's that we're yoked to the wrong things. Come off those yokes. Take his.","goingDeeper":"\"He gives power to the faint, and to him who has no might he increases strength.\"","goingDeeperRef":"Isaiah 40:29 ESV","reflection":"What yoke are you currently carrying that Jesus never actually asked you to carry? What would it take to lay it down and take his instead?","memoryPrompt":"This month's memory verse: Matthew 11:28–30. Write it out by hand today. Say it slowly. Let it land."},{"verse":"\"Come to me, all who labor and are heavy laden, and I will give you rest. Take my yoke upon you, and learn from me, for I am gentle and lowly in heart, and you will find rest for your souls. For my yoke is easy, and my burden is light.\"","verseRef":"Matthew 11:28–30 ESV","devotional":"Rest is not passive. Jesus invites us to rest in the yoke — which means there is still movement, still work, still life being lived. But the quality of that movement changes when it's yoked to him rather than to our own striving. This week, the Sabbath question is less about stopping and more about checking what you're yoked to. Is what you're carrying his invitation, or your own anxiety wearing spiritual clothes?","goingDeeper":"\"For freedom Christ has set us free; stand firm therefore, and do not submit again to a yoke of slavery.\"","goingDeeperRef":"Galatians 5:1 ESV","reflection":"As you rest today, what feels like a burden you could release into his hands? Practice doing that — not as a feeling, but as a choice.","memoryPrompt":"Can you say Matthew 11:28–30 from memory yet? Try it without looking. It's okay if you can't. Keep returning to it."},{"verse":"\"Come to me, all who labor and are heavy laden, and I will give you rest. Take my yoke upon you, and learn from me, for I am gentle and lowly in heart, and you will find rest for your souls. For my yoke is easy, and my burden is light.\"","verseRef":"Matthew 11:28–30 ESV","devotional":"Gentleness and lowliness. These are Jesus's own self-description — the two qualities he highlights when he tells us what kind of teacher he is. In a world of demanding, harsh, and performance-oriented spiritual environments, Jesus leads with tenderness. The yoke of a gentle teacher is different from every other yoke you've worn. Sabbath is the weekly practice of trusting that his gentleness is real — that he is not disappointed in you, he is for you.","goingDeeper":"\"The Lord is my shepherd; I shall not want. He makes me lie down in green pastures.\"","goingDeeperRef":"Psalm 23:1–2 ESV","reflection":"Do you actually experience Jesus as gentle toward you? If not, what image of him have you been operating with instead?","memoryPrompt":"Speak Matthew 11:28–30 out loud today, slowly. Notice which phrase catches you. Sit there."},{"verse":"\"Come to me, all who labor and are heavy laden, and I will give you rest. Take my yoke upon you, and learn from me, for I am gentle and lowly in heart, and you will find rest for your souls. For my yoke is easy, and my burden is light.\"","verseRef":"Matthew 11:28–30 ESV","devotional":"You've been with this passage for a month now. Something about it should be more alive than it was on day one — not because the words changed, but because you did. This is how scripture formation works. You don't extract meaning from a verse like mining ore. You return to it, live near it, let it return to you when you're not expecting it. By the end of a year of this, you'll be a person who carries the word in ways you can't yet see.","goingDeeper":"\"Your word is a lamp to my feet and a light to my path.\"","goingDeeperRef":"Psalm 119:105 ESV","reflection":"After a month with Matthew 11:28–30, what one phrase or word has most taken root in you? How has it changed anything?","memoryPrompt":"Close your eyes and say Matthew 11:28–30 from memory. You've got it. Now carry it into Month 2."}],"sunday":[{"verse":"\"Not neglecting to meet together, as is the habit of some, but encouraging one another, and all the more as you see the Day drawing near.\"","verseRef":"Hebrews 10:25 ESV","devotional":"The gathered church is not optional for the apprentice of Jesus. You cannot become like Jesus in isolation — you need the friction, the love, the challenge, and the encouragement that only come from a community of people who are also trying to follow him. Gathering isn't an obligation you fulfill; it's a gift you receive and a gift you bring. What you carry into the room today — your presence, your attention, your willingness — is an offering.","goingDeeper":"\"And they devoted themselves to the apostles' teaching and the fellowship, to the breaking of bread and the prayers.\"","goingDeeperRef":"Acts 2:42 ESV","reflection":"What are you bringing to your church community today — not just receiving but offering? Who around you needs what only you can give?"},{"verse":"\"Oh come, let us worship and bow down; let us kneel before the Lord, our Maker!\"","verseRef":"Psalm 95:6 ESV","devotional":"Worship begins with a posture before it becomes a feeling. The psalmist doesn't say 'wait until you feel like worshiping.' He says come — and the emotional experience follows the act of coming. This is the wisdom of corporate worship: sometimes you arrive depleted, dry, distracted. You bow down anyway. And in the act of turning your body and attention toward God, something often shifts. Worship is a practice before it is an experience.","goingDeeper":"\"God is spirit, and those who worship him must worship in spirit and truth.\"","goingDeeperRef":"John 4:24 ESV","reflection":"How did God meet you in worship today? Was there a moment — a song, a word, a silence — where you were aware of his presence?"},{"verse":"\"And they devoted themselves to the apostles' teaching and the fellowship, to the breaking of bread and the prayers.\"","verseRef":"Acts 2:42 ESV","devotional":"The early church had a four-fold rhythm: teaching, fellowship, bread, prayer. Notice that two of the four are relational — they couldn't be done alone. The breaking of bread and fellowship aren't extras on top of the 'real' spiritual content. They are the spiritual content. Jesus is made known in the breaking of bread, in the table, in the face of the person sitting next to you. The church is not the building you come to. It's the people you come with.","goingDeeper":"\"So we, though many, are one body in Christ, and individually members one of another.\"","goingDeeperRef":"Romans 12:5 ESV","reflection":"Who in your church community do you know well enough to notice when they're struggling? Who knows you that well?"},{"verse":"\"How lovely is your dwelling place, O Lord of hosts! My soul longs, yes, faints for the courts of the Lord.\"","verseRef":"Psalm 84:1–2 ESV","devotional":"The Psalms of Ascent — of which Psalm 84 is one — were sung by pilgrims on their way to Jerusalem for the great feasts. The gathering was something they ached for. Something they traveled toward. In our age of easy church — livestreams, podcasts, services on demand — it's worth asking whether gathering has cost us anything, whether we've had to choose it over something else. Longing is what happens when you've been away long enough to miss something real.","goingDeeper":"\"I was glad when they said to me, 'Let us go to the house of the Lord!'\"","goingDeeperRef":"Psalm 122:1 ESV","reflection":"Do you long for gathered worship, or have you settled for convenient worship? What would it look like to cultivate that longing again?"}]};
+const DEVOTIONAL_MONTHS={1:MONTH1};
+
+function getMonthsSinceStart(){
+  if(!S.startDate) return 1;
+  const days=Math.floor((new Date(today())-new Date(S.startDate))/86400000);
+  return Math.max(1, Math.floor(days/30)+1);
+}
+function getContentMonthNumber(){
+  const keys=Object.keys(DEVOTIONAL_MONTHS).map(Number);
+  return Math.min(getMonthsSinceStart(), Math.max(...keys));
+}
+function getWeekdayOccurrence(date){
+  let count=0;
+  for(let day=1; day<=date.getDate(); day++){
+    const dow=new Date(date.getFullYear(),date.getMonth(),day).getDay();
+    if(dow!==0&&dow!==6) count++;
+  }
+  return count;
+}
+function getWeekendOccurrence(date,targetDow){
+  let count=0;
+  for(let day=1; day<=date.getDate(); day++){
+    if(new Date(date.getFullYear(),date.getMonth(),day).getDay()===targetDow) count++;
+  }
+  return count;
+}
+function getTodayDevotional(){
+  const monthData=DEVOTIONAL_MONTHS[getContentMonthNumber()];
+  if(!monthData) return null;
+  const d=new Date();
+  const dow=d.getDay();
+  if(dow===6){
+    const occ=getWeekendOccurrence(d,6);
+    return {...monthData.saturday[(occ-1)%monthData.saturday.length],kind:'saturday',label:'☀️ Saturday · Sabbath & Memory'};
+  }
+  if(dow===0){
+    const occ=getWeekendOccurrence(d,0);
+    return {...monthData.sunday[(occ-1)%monthData.sunday.length],kind:'sunday',label:'🙏 Sunday · Worship & Community'};
+  }
+  const occ=getWeekdayOccurrence(d);
+  return {...monthData.weekday[(occ-1)%monthData.weekday.length],kind:'weekday',label:monthData.meta.title};
+}
+function renderDevotional(){
+  const devo=getTodayDevotional();
+  const card=document.getElementById('devoCard');
+  if(!devo){card.style.display='none';return null;}
+  document.getElementById('dailyVerse').textContent=devo.verse;
+  document.getElementById('dailyRef').textContent='— '+devo.verseRef;
+  document.getElementById('devoLabel').textContent=devo.label;
+  document.getElementById('devoBody').textContent=devo.devotional;
+  const dw=document.getElementById('devoDeeperWrap');
+  if(devo.goingDeeper){
+    dw.style.display='block';
+    document.getElementById('devoDeeperText').textContent=devo.goingDeeper+' — '+devo.goingDeeperRef;
+  } else dw.style.display='none';
+  const mem=document.getElementById('devoMemory');
+  if(devo.memoryPrompt){mem.style.display='block';mem.textContent='✏️ '+devo.memoryPrompt;}
+  else mem.style.display='none';
+  card.style.display='block';
+  return devo;
+}
+
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+function loadState(){
+  const s=localStorage.getItem('rhythm_v1');
+  if(s) return JSON.parse(s);
+  return{
+    onboarded:false,focus:null,startDate:null,currentDay:1,
+    streak:0,sabbathRests:0,streakTowardSabbath:0,
+    completedDays:{},restChallengeProgress:{},sheepChallengeProgress:{},
+    done:{},reflections:[],
+    sheep:0,actsOfLove:0,
+    gardenCooldowns:{},gardenWater:0,gardenSun:0,gardenPray:0,
+    firstDayDone:false,
+  };
+}
+let S=loadState();
+function saveState(){localStorage.setItem('rhythm_v1',JSON.stringify(S));}
+function today(){return new Date().toISOString().slice(0,10);}
+function todayDone(){return S.done[today()]||{};}
+function saveTodayDone(d){S.done[today()]=d;saveState();}
+
+// ─── ONBOARDING ──────────────────────────────────────────────────────────────
+let selHabit=null,obStep=1;
+function obNext(step){
+  document.getElementById('ob'+obStep).classList.remove('active');
+  document.getElementById('ob'+step).classList.add('active');
+  obStep=step;
+}
+function selectHabit(h){
+  selHabit=h;
+  document.querySelectorAll('.habit-card').forEach(c=>c.classList.toggle('selected',c.dataset.habit===h));
+  document.getElementById('ob2next').disabled=false;
+}
+function finishOnboarding(){
+  S.onboarded=true;S.focus=selHabit||'all';S.startDate=today();S.currentDay=1;
+  saveState();
+  document.getElementById('onboarding').style.display='none';
+  document.getElementById('mainApp').style.display='block';
+  document.getElementById('bottomNav').style.display='flex';
+  initApp();
+}
+
+// ─── CINEMATIC ───────────────────────────────────────────────────────────────
+let cinTimer=null;
+function playCinematic(stageImgs,onDone){
+  const el=document.getElementById('cinematic');
+  const img=document.getElementById('cinImg');
+  const cap=document.getElementById('cinCaption');
+  el.classList.add('show');
+  const TIMING=[0,2200,4400,6600,8800,11000];
+  const total=11000;
+  let start=Date.now(),lastStage=-1;
+  function tick(){
+    const elapsed=Date.now()-start;
+    if(elapsed>=total){
+      img.classList.remove('visible');cap.classList.remove('visible');
+      setTimeout(()=>{el.classList.remove('show');if(onDone)onDone();},700);
+      return;
+    }
+    let stage=0;
+    for(let i=0;i<TIMING.length-1;i++){if(elapsed>=TIMING[i])stage=i;}
+    stage=Math.min(stage,4);
+    if(stage!==lastStage){
+      lastStage=stage;
+      img.classList.remove('visible');cap.classList.remove('visible');
+      setTimeout(()=>{
+        if(stageImgs[stage]){img.src=stageImgs[stage].src;}
+        cap.textContent=CIN_CAPTIONS[stage];
+        img.classList.add('visible');cap.classList.add('visible');
+      },350);
+    }
+    cinTimer=requestAnimationFrame(tick);
+  }
+  cinTimer=requestAnimationFrame(tick);
+}
+function skipCinematic(){
+  if(cinTimer)cancelAnimationFrame(cinTimer);
+  document.getElementById('cinematic').classList.remove('show');
+  renderTree();
+}
+
+// ─── TREE CANVAS ─────────────────────────────────────────────────────────────
+let treeAnimReq=null,treeImgs=[],treeImgsLoaded=false;
+let waterDrops=[],sunRays=0,praySparkles=[];
+
+function loadTreeImages(srcs,onLoaded){
+  let loaded=0;
+  treeImgs=srcs.map(src=>{
+    const img=new Image();
+    img.onload=()=>{loaded++;if(loaded===srcs.length){treeImgsLoaded=true;if(onLoaded)onLoaded();}};
+    img.src=src;
+    return img;
+  });
+}
+
+function getTreeStage(day){
+  if(day<=2) return 0;
+  if(day<=8) return 1;
+  if(day<=15) return 2;
+  if(day<=23) return 3;
+  return 4;
+}
+
+function drawTreeScene(){
+  const cvs=document.getElementById('treeCanvas');
+  if(!cvs) return;
+  const ctx=cvs.getContext('2d');
+  const W=cvs.width,H=cvs.height;
+  ctx.clearRect(0,0,W,H);
+  const gndY=H*0.73;
+
+  // SKY
+  const sg=ctx.createLinearGradient(0,0,0,gndY);
+  sg.addColorStop(0,'#c8dff5');sg.addColorStop(1,'#e4f0e8');
+  ctx.fillStyle=sg;ctx.fillRect(0,0,W,gndY);
+
+  // SUN
+  const sx=W*0.82,sy=H*0.12;
+  ctx.fillStyle=`rgba(255,220,40,${0.18+sunRays*0.45})`;
+  ctx.beginPath();ctx.arc(sx,sy,(26+sunRays*10),0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(255,200,20,0.9)';
+  ctx.beginPath();ctx.arc(sx,sy,20,0,Math.PI*2);ctx.fill();
+  if(sunRays>0.05){
+    ctx.strokeStyle=`rgba(255,210,30,${sunRays*0.5})`;ctx.lineWidth=2;
+    for(let i=0;i<8;i++){
+      const a=i*Math.PI/4;
+      ctx.beginPath();ctx.moveTo(sx+Math.cos(a)*24,sy+Math.sin(a)*24);ctx.lineTo(sx+Math.cos(a)*(32+sunRays*10),sy+Math.sin(a)*(32+sunRays*10));ctx.stroke();
+    }
+    sunRays=Math.max(0,sunRays-0.007);
+  }
+
+  // GROUND
+  const gndG=ctx.createLinearGradient(0,gndY,0,H);
+  gndG.addColorStop(0,'#78b048');gndG.addColorStop(0.35,'#558828');gndG.addColorStop(1,'#386018');
+  ctx.fillStyle=gndG;ctx.fillRect(0,gndY,W,H-gndY);
+  ctx.fillStyle='#78b048';
+  ctx.beginPath();ctx.ellipse(W/2,gndY+H*0.02,W*0.62,H*0.05,0,0,Math.PI*2);ctx.fill();
+
+  // GRASS TUFTS
+  ctx.strokeStyle='#68a038';ctx.lineWidth=2;
+  [0.06,0.15,0.25,0.68,0.78,0.88,0.95].forEach(xf=>{
+    const gx=W*xf;
+    ctx.beginPath();ctx.moveTo(gx,gndY);ctx.lineTo(gx-3,gndY-10);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(gx+5,gndY+1);ctx.lineTo(gx+4,gndY-8);ctx.stroke();
+  });
+
+  // WATER DROPS
+  waterDrops.forEach(d=>{d.y+=d.vy;d.vy+=0.45;d.life--;});
+  waterDrops=waterDrops.filter(d=>d.life>0);
+  waterDrops.forEach(d=>{
+    const a=Math.max(0,d.life/30);
+    ctx.fillStyle=`rgba(70,150,220,${a})`;
+    ctx.beginPath();ctx.arc(d.x,d.y,d.r*a,0,Math.PI*2);ctx.fill();
+  });
+
+  // PRAYER SPARKLES
+  praySparkles.forEach(p=>{p.y-=0.55;p.life--;});
+  praySparkles=praySparkles.filter(p=>p.life>0);
+  praySparkles.forEach(p=>{
+    const a=Math.max(0,p.life/55);
+    ctx.fillStyle=`rgba(170,130,255,${a})`;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r*a,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle=`rgba(190,150,255,${a*0.7})`;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(p.x-4,p.y);ctx.lineTo(p.x+4,p.y);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(p.x,p.y-4);ctx.lineTo(p.x,p.y+4);ctx.stroke();
+  });
+
+  // TREE IMAGE
+  const day=S.currentDay||1;
+  const stage=getTreeStage(day);
+  if(treeImgsLoaded&&treeImgs[stage]&&treeImgs[stage].complete){
+    const size=W*0.66;
+    ctx.drawImage(treeImgs[stage],W/2-size/2,gndY-size*0.82,size,size);
+  }
+
+  treeAnimReq=requestAnimationFrame(drawTreeScene);
+}
+
+function renderTree(){
+  if(treeAnimReq)cancelAnimationFrame(treeAnimReq);
+  const cvs=document.getElementById('treeCanvas');
+  if(!cvs)return;
+  const w=cvs.offsetWidth;
+  cvs.width=w*devicePixelRatio;cvs.height=Math.round(w*0.55)*devicePixelRatio;
+  cvs.style.height=Math.round(w*0.55)+'px';
+  drawTreeScene();
+  const day=S.currentDay||1;
+  document.getElementById('treeDayLabel').textContent='Day '+day;
+  document.getElementById('treeProgBar').style.width=Math.round((day-1)/29*100)+'%';
+}
+
+// ─── PASTURE CANVAS ───────────────────────────────────────────────────────────
+let pastureAnimReq=null;
+let sheepList=[];
+
+function initSheep(){
+  sheepList=[];
+  for(let i=0;i<S.sheep;i++) spawnSheep(true);
+}
+
+function spawnSheep(silent){
+  const cvs=document.getElementById('pastureCanvas');
+  if(!cvs)return;
+  const W=cvs.width;
+  const gndY=cvs.height*0.62;
+  const slots=[0.08,0.88,0.15,0.80,0.22,0.72,0.05,0.93,0.35,0.60];
+  const x=W*(slots[sheepList.length%slots.length]+(Math.random()-0.5)*0.04);
+  sheepList.push({
+    x,y:gndY,facing:Math.random()<0.5?1:-1,
+    blink:Math.floor(Math.random()*250)+80,
+    bob:Math.random()*Math.PI*2,
+    wander:Math.floor(Math.random()*350)+120,
+    tx:x,speed:(0.3+Math.random()*0.3)*devicePixelRatio,
+    wc:SHEEP_COLORS[sheepList.length%SHEEP_COLORS.length],
+    scale:0.85+Math.random()*0.3,
+  });
+  if(!silent)showToast('🐑 A sheep joined your pasture!');
+}
+
+function updateSheep(W){
+  sheepList.forEach(sh=>{
+    sh.bob+=0.035;sh.blink--;
+    if(sh.blink<=0)sh.blink=Math.floor(Math.random()*300)+80;
+    sh.wander--;
+    if(sh.wander<=0){
+      sh.tx=W*(0.04+Math.random()*0.9);
+      sh.wander=Math.floor(Math.random()*400)+120;
+      sh.facing=sh.tx>sh.x?1:-1;
+    }
+    if(Math.abs(sh.tx-sh.x)>2)sh.x+=Math.sign(sh.tx-sh.x)*sh.speed;
+  });
+}
+
+function drawOneSheep(ctx,sh){
+  const sc=devicePixelRatio*sh.scale;
+  const x=sh.x,y=sh.y+Math.sin(sh.bob)*1.8*sc,f=sh.facing;
+  ctx.fillStyle=sh.wc;
+  ctx.beginPath();ctx.ellipse(x,y,20*sc,13*sc,0,0,Math.PI*2);ctx.fill();
+  [[0,-13],[12,-8],[-12,-8],[16,0],[-16,0],[8,8],[-8,8]].forEach(([ox,oy])=>{
+    ctx.beginPath();ctx.arc(x+ox*sc,y+oy*sc,7*sc,0,Math.PI*2);ctx.fill();
+  });
+  ctx.fillStyle='#e8e0d0';ctx.beginPath();ctx.ellipse(x+f*18*sc,y-5*sc,10*sc,9*sc,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#d4c8b0';ctx.beginPath();ctx.ellipse(x+f*14*sc,y-12*sc,4*sc,6*sc,-0.3*f,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#2a1a0a';
+  if(sh.blink<4){ctx.fillRect(x+f*22*sc-3,y-6*sc,6*sc,1.5*sc);}
+  else{ctx.beginPath();ctx.arc(x+f*22*sc,y-5*sc,2.5*sc,0,Math.PI*2);ctx.fill();}
+  ctx.strokeStyle='#9a8060';ctx.lineWidth=2.5*sc;
+  [-8,-3,3,8].forEach((ox,i)=>{
+    const lx=x+ox*sc;
+    ctx.beginPath();ctx.moveTo(lx,y+13*sc);ctx.lineTo(lx+Math.sin(sh.bob+i*0.4)*2*sc,y+25*sc);ctx.stroke();
+  });
+}
+
+function drawPastureScene(){
+  const cvs=document.getElementById('pastureCanvas');
+  if(!cvs)return;
+  const ctx=cvs.getContext('2d');
+  const W=cvs.width,H=cvs.height;
+  ctx.clearRect(0,0,W,H);
+  const gndY=H*0.62;
+
+  // SKY — wider, more open than tree scene
+  const sg=ctx.createLinearGradient(0,0,0,gndY);
+  sg.addColorStop(0,'#b8d8f0');sg.addColorStop(1,'#dcefd8');
+  ctx.fillStyle=sg;ctx.fillRect(0,0,W,gndY);
+
+  // CLOUDS
+  [[W*0.12,H*0.08,55],[W*0.48,H*0.05,42],[W*0.78,H*0.1,48]].forEach(([cx,cy,r])=>{
+    ctx.fillStyle='rgba(255,255,255,0.82)';
+    [[0,0,1],[r*0.6,-r*0.3,0.8],[r*-0.6,-r*0.2,0.75],[r*1.1,r*0.1,0.65],[r*-1.0,r*0.05,0.6]].forEach(([ox,oy,s])=>{
+      ctx.beginPath();ctx.arc(cx+ox,cy+oy,r*s,0,Math.PI*2);ctx.fill();
+    });
+  });
+
+  // SUN (smaller, pasture sun)
+  ctx.fillStyle='rgba(255,220,40,0.22)';ctx.beginPath();ctx.arc(W*0.88,H*0.1,22,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(255,200,20,0.9)';ctx.beginPath();ctx.arc(W*0.88,H*0.1,15,0,Math.PI*2);ctx.fill();
+
+  // ROLLING HILLS
+  ctx.fillStyle='#a8d060';
+  ctx.beginPath();ctx.moveTo(0,gndY);
+  ctx.bezierCurveTo(W*0.2,gndY-H*0.08,W*0.4,gndY-H*0.04,W*0.6,gndY-H*0.06);
+  ctx.bezierCurveTo(W*0.75,gndY-H*0.09,W*0.88,gndY-H*0.03,W,gndY-H*0.05);
+  ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.fill();
+
+  // GROUND
+  const gg=ctx.createLinearGradient(0,gndY,0,H);
+  gg.addColorStop(0,'#88c048');gg.addColorStop(0.4,'#60982a');gg.addColorStop(1,'#3a6018');
+  ctx.fillStyle=gg;ctx.fillRect(0,gndY,W,H-gndY);
+
+  // distant trees on horizon
+  [[W*0.05,gndY-H*0.08],[W*0.92,gndY-H*0.06],[W*0.82,gndY-H*0.1]].forEach(([tx,ty])=>{
+    ctx.fillStyle='#4a7830';
+    ctx.beginPath();ctx.arc(tx,ty,18,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#3a6025';ctx.fillRect(tx-3,ty,6,H*0.08);
+  });
+
+  // FENCE
+  ctx.strokeStyle='#c8a870';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(W*0.02,gndY+H*0.05);ctx.lineTo(W*0.98,gndY+H*0.05);ctx.stroke();
+  [0.08,0.2,0.32,0.44,0.56,0.68,0.80,0.92].forEach(xf=>{
+    const fx=W*xf,fy=gndY+H*0.01;
+    ctx.beginPath();ctx.moveTo(fx,fy);ctx.lineTo(fx,fy+H*0.08);ctx.stroke();
+  });
+
+  // GRASS TUFTS
+  ctx.strokeStyle='#70a830';ctx.lineWidth=2;
+  [0.08,0.18,0.3,0.5,0.62,0.74,0.86,0.96].forEach(xf=>{
+    const gx=W*xf;
+    ctx.beginPath();ctx.moveTo(gx,gndY);ctx.lineTo(gx-3,gndY-11);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(gx+6,gndY+1);ctx.lineTo(gx+4,gndY-9);ctx.stroke();
+  });
+
+  // empty pasture message
+  if(sheepList.length===0){
+    ctx.fillStyle='rgba(80,100,60,0.45)';
+    ctx.font=`${Math.round(14*devicePixelRatio)}px Georgia,serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle='rgba(60,80,40,0.5)';
+    ctx.fillText('Complete a challenge below to bring your first sheep.',W/2,gndY+H*0.2);
+  }
+
+  // SHEEP
+  updateSheep(W);
+  sheepList.forEach(sh=>drawOneSheep(ctx,sh));
+
+  pastureAnimReq=requestAnimationFrame(drawPastureScene);
+}
+
+function renderPasture(){
+  if(pastureAnimReq)cancelAnimationFrame(pastureAnimReq);
+  const cvs=document.getElementById('pastureCanvas');
+  if(!cvs)return;
+  const w=cvs.offsetWidth;
+  cvs.width=w*devicePixelRatio;cvs.height=Math.round(w*0.62)*devicePixelRatio;
+  cvs.style.height=Math.round(w*0.62)+'px';
+  sheepList.forEach(sh=>{
+    const gndY=cvs.height*0.62;
+    sh.y=gndY;sh.x=sh.x*(cvs.width/800)||cvs.width/2;
+  });
+  drawPastureScene();
+  document.getElementById('sheepCount').textContent=S.sheep;
+  document.getElementById('challengesDone').textContent=S.actsOfLove;
+  document.getElementById('streakNum2').textContent=S.streak;
+}
+
+// ─── GARDEN ACTIONS ──────────────────────────────────────────────────────────
+function gardenAction(type){
+  const now=Date.now();
+  const cd=S.gardenCooldowns[type]||0;
+  const demoCd=10*1000;
+  if(now-cd<demoCd){showToast('Come back in '+Math.ceil((demoCd-(now-cd))/1000)+'s.');return;}
+  S.gardenCooldowns[type]=now;saveState();
+  const cvs=document.getElementById('treeCanvas');
+  const W=cvs.width,H=cvs.height,cx=W/2,gndY=H*0.73;
+  if(type==='water'){
+    S.gardenWater++;
+    for(let i=0;i<14;i++) waterDrops.push({x:cx+(Math.random()-0.5)*70,y:gndY-220-Math.random()*80,vy:-2.5+Math.random()*-2,r:3+Math.random()*4,life:40+Math.random()*20});
+    showToast('💧 You watered your tree.');
+  } else if(type==='sun'){
+    sunRays=1.0;showToast('☀️ The sun shines on your garden.');
+  } else if(type==='pray'){
+    for(let i=0;i<20;i++) praySparkles.push({x:cx+(Math.random()-0.5)*130,y:gndY-Math.random()*200,r:2+Math.random()*3,life:55+Math.random()*40});
+    showToast('🙏 Your prayer rises like incense.');
+  }
+  saveState();
+  // emit particles from button
+  const btn=document.getElementById('btn'+type.charAt(0).toUpperCase()+type.slice(1));
+  if(btn){
+    const r=btn.getBoundingClientRect();
+    const emojis={water:['💧','🌊'],sun:['✨','🌟'],pray:['✝','✦']};
+    (emojis[type]||[]).concat(['·','·','·']).slice(0,5).forEach(e=>{
+      const el=document.createElement('div');
+      el.className='particle';
+      el.textContent=e;
+      el.style.cssText=`left:${r.left+r.width/2}px;top:${r.top}px;--tx:${(Math.random()-0.5)*80}px;--ty:${-40-Math.random()*60}px;`;
+      document.body.appendChild(el);
+      setTimeout(()=>el.remove(),950);
+    });
+  }
+}
+
+// ─── READING PLAN CARD ───────────────────────────────────────────────────────
+function renderReadingCard(){
+  const plan = getTodayPlan();
+  document.getElementById('planDayBadge').textContent = 'Day '+plan.day;
+  document.getElementById('planTheme').textContent = plan.theme;
+  const rows = [
+    {icon:'📖', label:'NT', ref: planRef(plan.nt), color:'var(--green-text)', bg:'var(--green-bg)', border:'rgba(74,124,89,0.15)'},
+    {icon:'📜', label:'OT', ref: planRef(plan.ot), color:'var(--text2)',      bg:'var(--surface2)', border:'var(--border)'},
+    {icon:'🎵', label:plan.ps.book==='Proverbs'?'Proverbs':'Psalm', ref: planRef(plan.ps), color:'var(--gold-text)', bg:'var(--gold-bg)', border:'rgba(154,116,32,0.12)'},
+  ];
+  document.getElementById('planCardRows').innerHTML = rows.map(r=>`
+    <div style="display:flex;align-items:center;gap:8px;background:${r.bg};border:1px solid ${r.border};border-radius:7px;padding:7px 10px;">
+      <span style="font-size:14px">${r.icon}</span>
+      <span style="font-size:11px;font-weight:600;color:${r.color};width:42px;flex-shrink:0">${r.label}</span>
+      <span style="font-size:14px;font-weight:600;color:var(--text)">${r.ref}</span>
+    </div>`).join('');
+}
+
+// ─── PRACTICES ───────────────────────────────────────────────────────────────
+function renderPractices(){
+  const done=todayDone();
+  const list=document.getElementById('practiceList');
+  list.innerHTML='';
+  PRACTICES.forEach(p=>{
+    const el=document.createElement('div');
+    el.className='p-item'+(done[p.id]?' done':'');
+    el.innerHTML=`<div class="p-check">${done[p.id]?'✓':''}</div><div class="p-icon">${p.icon}</div><div class="p-text"><div class="p-name">${p.name}</div><div class="p-desc">${p.desc}</div></div><span style="color:var(--text3);font-size:14px">›</span>`;
+    el.addEventListener('click',()=>openFocus(p));
+    list.appendChild(el);
+  });
+  updateProgress();
+}
+
+function updateProgress(){
+  const done=todayDone();
+  const count=Object.values(done).filter(Boolean).length;
+  const total=PRACTICES.length;
+  const pct=Math.round(count/total*100);
+  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('progText').textContent=count+' of '+total+' complete';
+  document.getElementById('progPct').textContent=pct+'%';
+  if(count===total){
+    const t=today();
+    if(!S.completedDays[t]){
+      S.completedDays[t]=1.0;S.streak++;S.streakTowardSabbath++;
+      if(S.streakTowardSabbath>=6&&S.sabbathRests<3){
+        S.sabbathRests=Math.min(S.sabbathRests+1,3);S.streakTowardSabbath=0;
+        setTimeout(()=>showToast('☀️ You earned a Sabbath Rest!'),600);
+      }
+      if(!S.firstDayDone){
+        S.firstDayDone=true;saveState();
+        setTimeout(()=>playCinematic(treeImgs,()=>{renderTree();showToast('🌱 Your tree is planted!');}),400);
+      } else {
+        showToast('🌿 Day complete! Your tree is growing.');
+      }
+      saveState();renderSabbathCard();updateHeader();
+      document.getElementById('treeDayLabel').textContent='Day '+(S.currentDay||1);
+      document.getElementById('treeProgBar').style.width=Math.round(((S.currentDay||1)-1)/29*100)+'%';
+    }
+  }
+}
+
+// ─── FOCUS PANEL ─────────────────────────────────────────────────────────────
+let timerSecs=0,timerInterval=null,timerRunning=false,activePractice=null;
+function openFocus(p){
+  activePractice=p;
+  document.getElementById('fpTitle').textContent=p.name;
+  // Build dynamic guide for scripture practice
+  const guide = p.id==='scripture' ? buildScriptureGuide(getTodayPlan()) : p.guide;
+  document.getElementById('fpBody').innerHTML=guide;
+  clearInterval(timerInterval);timerRunning=false;
+  const td=document.getElementById('timerDisplay'),tc=document.getElementById('timerControls');
+  if(p.hasTimer&&p.duration>0){
+    timerSecs=p.duration;td.classList.remove('hidden');tc.classList.remove('hidden');
+    updateTimerDisplay();document.getElementById('timerToggle').textContent='▶ Start';
+  } else {td.classList.add('hidden');tc.classList.add('hidden');}
+  const fp=document.getElementById('focusPanel');
+  fp.classList.add('show');fp.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function closeFocus(){clearInterval(timerInterval);timerRunning=false;document.getElementById('focusPanel').classList.remove('show');}
+function markDone(){
+  if(activePractice){
+    const done=todayDone();done[activePractice.id]=true;saveTodayDone(done);
+    if(activePractice.id==='scripture') tickRestChallenge('psalm7');
+  }
+  closeFocus();renderPractices();renderChallenges();
+}
+function toggleTimer(){
+  if(timerRunning){clearInterval(timerInterval);timerRunning=false;document.getElementById('timerToggle').textContent='▶ Resume';}
+  else{timerRunning=true;document.getElementById('timerToggle').textContent='⏸ Pause';
+    timerInterval=setInterval(()=>{timerSecs--;if(timerSecs<=0){timerSecs=0;clearInterval(timerInterval);timerRunning=false;document.getElementById('timerDisplay').textContent='Done ✓';document.getElementById('timerToggle').textContent='▶ Start';}else updateTimerDisplay();},1000);}
+}
+function resetTimer(){clearInterval(timerInterval);timerRunning=false;timerSecs=activePractice?activePractice.duration:0;updateTimerDisplay();document.getElementById('timerToggle').textContent='▶ Start';}
+function updateTimerDisplay(){const m=Math.floor(timerSecs/60),s=timerSecs%60;document.getElementById('timerDisplay').textContent=m+':'+String(s).padStart(2,'0');}
+
+// ─── SABBATH ─────────────────────────────────────────────────────────────────
+function renderSabbathCard(){
+  const r=S.sabbathRests,t=S.streakTowardSabbath;
+  let dots='';for(let i=0;i<3;i++)dots+=`<div class="sab-dot ${i<r?'filled':''}">☀</div>`;
+  document.getElementById('sabbathDots').innerHTML=dots;
+  document.getElementById('sabbathBody').textContent=r>=3?'Maximum 3 Rests stored. Use one on a missed day.':r>0?`${r} Rest${r>1?'s':''} banked. ${6-t} more faithful days earns another.`:`${6-t} more faithful days earns your first Rest.`;
+  let sd='';for(let i=0;i<6;i++)sd+=`<div class="sab-streak-dot ${i<t?'lit':''}"></div>`;
+  document.getElementById('sabStreakDots').innerHTML=sd;
+  document.getElementById('sabStreakLbl').textContent=t+'/6 toward next Rest';
+}
+function updateHeader(){
+  document.getElementById('streakNum').textContent=S.streak;
+  document.getElementById('sabbathCount').textContent=S.sabbathRests;
+}
+function showSabbathModal(){
+  document.getElementById('sabbathModalCount').textContent=S.sabbathRests;
+  document.getElementById('useSabbathBtn').disabled=S.sabbathRests===0;
+  document.getElementById('sabbathModal').classList.add('show');
+}
+function closeModal(){document.getElementById('sabbathModal').classList.remove('show');}
+function useSabbathRest(){
+  if(S.sabbathRests<=0)return;
+  S.sabbathRests--;S.streak=Math.max(S.streak,1);saveState();
+  closeModal();renderSabbathCard();updateHeader();showToast('☀️ Sabbath Rest used — streak protected.');
+}
+
+// ─── WEEK ─────────────────────────────────────────────────────────────────────
+function renderWeek(){
+  const grid=document.getElementById('weekGrid');grid.innerHTML='';
+  const t=today();
+  for(let i=13;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const ds=d.toISOString().slice(0,10);
+    const lbl=['S','M','T','W','T','F','S'][d.getDay()];
+    const comp=S.completedDays[ds];
+    let cls='day-dot',inner=lbl;
+    if(ds===t&&!comp){cls+=' today';}
+    else if(comp>=1.0){cls+=' full';inner='✓';}
+    else if(comp>0){cls+=' partial';inner='~';}
+    grid.innerHTML+=`<div class="day-col"><div class="${cls}">${inner}</div><div class="day-lbl">${lbl}</div></div>`;
+  }
+  document.getElementById('s1').textContent=S.streak;
+  document.getElementById('s2').textContent=Object.values(S.completedDays).filter(v=>v>=1.0).length;
+  document.getElementById('s3').textContent=S.sabbathRests;
+}
+
+// ─── CHALLENGES ──────────────────────────────────────────────────────────────
+function tickRestChallenge(id){
+  const ch=REST_CHALLENGES.find(c=>c.id===id);if(!ch)return;
+  if(!S.restChallengeProgress[id])S.restChallengeProgress[id]={progress:0,claimed:false};
+  if(S.restChallengeProgress[id].claimed)return;
+  S.restChallengeProgress[id].progress=Math.min(S.restChallengeProgress[id].progress+1,ch.goal);
+  saveState();
+}
+function markRestDone(id){
+  const ch=REST_CHALLENGES.find(c=>c.id===id);if(!ch)return;
+  if(!S.restChallengeProgress[id])S.restChallengeProgress[id]={progress:0,claimed:false};
+  S.restChallengeProgress[id].progress=ch.goal;saveState();renderChallenges();
+  showToast('Marked done — tap Claim to receive your Rest.');
+}
+function claimRest(id){
+  const ch=REST_CHALLENGES.find(c=>c.id===id);if(!ch)return;
+  if(!S.restChallengeProgress[id])S.restChallengeProgress[id]={progress:ch.goal,claimed:false};
+  S.restChallengeProgress[id].claimed=true;
+  S.sabbathRests=Math.min(S.sabbathRests+ch.reward,3);
+  saveState();renderChallenges();renderSabbathCard();updateHeader();
+  showToast('☀️ +'+ch.reward+' Sabbath Rest'+(ch.reward>1?'s':'')+' earned!');
+}
+function markSheepDone(id){
+  if(!S.sheepChallengeProgress[id])S.sheepChallengeProgress[id]={progress:0,claimed:false};
+  S.sheepChallengeProgress[id].progress=1;saveState();renderChallenges();
+  showToast('Marked done — tap Claim to bring your sheep.');
+}
+function claimSheep(id){
+  if(!S.sheepChallengeProgress[id])S.sheepChallengeProgress[id]={progress:1,claimed:false};
+  S.sheepChallengeProgress[id].claimed=true;
+  S.sheep++;S.actsOfLove++;saveState();
+  spawnSheep(false);
+  renderChallenges();renderPasture();
+}
+
+function challengeHTML(ch,progress,claimed,isRest){
+  const cp=progress||{progress:0,claimed:false};
+  const pct=Math.round(cp.progress/ch.goal*100);
+  const ready=cp.progress>=ch.goal&&!claimed;
+  return `<div class="ch-card">
+    <div class="ch-header">
+      <div class="ch-name">${ch.icon} ${ch.name}</div>
+      <div class="ch-reward ${isRest?'rest':'sheep'}">${isRest?'+'+ch.reward+' ☀️':'+1 🐑'}</div>
+    </div>
+    <div class="ch-desc">${ch.desc}</div>
+    <div class="ch-scripture">${ch.scripture}</div>
+    <div class="ch-prog">
+      <div class="ch-track"><div class="ch-fill" style="width:${pct}%"></div></div>
+      <div class="ch-meta"><span>${claimed?'Completed ✓':cp.progress+' / '+ch.goal}</span><span>${pct}%</span></div>
+    </div>
+    ${claimed
+      ?`<button class="ch-btn claimed" disabled>Reward claimed ✓</button>`
+      :ready
+        ?`<button class="ch-btn ${isRest?'earn':'earn-sheep'}" onclick="${isRest?'claimRest':'claimSheep'}('${ch.id}')">${isRest?'Claim Sabbath Rest ☀️':'Bring sheep to pasture 🐑'}</button>`
+        :`<button class="ch-btn todo" onclick="${isRest?'markRestDone':'markSheepDone'}('${ch.id}')">I've done this →</button>`
+    }</div>`;
+}
+
+function renderChallenges(){
+  // Sabbath tab — rest challenges
+  const rl=document.getElementById('restChList');
+  if(rl) rl.innerHTML=REST_CHALLENGES.map(ch=>challengeHTML(ch,S.restChallengeProgress[ch.id],S.restChallengeProgress[ch.id]?.claimed,true)).join('');
+  // Pasture tab — sheep challenges
+  const pl=document.getElementById('pastureChList');
+  if(pl) pl.innerHTML=SHEEP_CHALLENGES.map(ch=>challengeHTML(ch,S.sheepChallengeProgress[ch.id],S.sheepChallengeProgress[ch.id]?.claimed,false)).join('');
+}
+
+// ─── REFLECT ─────────────────────────────────────────────────────────────────
+function saveReflect(){
+  const text=document.getElementById('reflectArea').value.trim();if(!text)return;
+  const date=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  S.reflections.unshift({date,text});S.reflections=S.reflections.slice(0,30);
+  saveState();document.getElementById('reflectArea').value='';renderReflections();
+}
+function renderReflections(){
+  const el=document.getElementById('pastReflections');
+  if(!S.reflections.length){el.innerHTML='<div class="empty-state">No reflections yet — your first one is waiting above.</div>';return;}
+  el.innerHTML=S.reflections.map(r=>`<div class="past-item"><div class="past-date">${r.date}</div><div class="past-text">${r.text}</div></div>`).join('');
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(tab){
+  ['grow','pasture','sabbath','reflect'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('hidden',t!==tab);
+    document.getElementById('nav-'+t).classList.toggle('active',t===tab);
+  });
+  closeFocus();
+  if(tab==='grow'){renderTree();}
+  else{if(treeAnimReq){cancelAnimationFrame(treeAnimReq);treeAnimReq=null;}}
+  if(tab==='pasture'){renderPasture();}
+  else{if(pastureAnimReq){cancelAnimationFrame(pastureAnimReq);pastureAnimReq=null;}}
+  if(tab==='sabbath'){renderWeek();}
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+function recalcDay(){
+  if(!S.startDate)return;
+  const diff=Math.floor((new Date(today())-new Date(S.startDate))/86400000);
+  S.currentDay=Math.min(diff+1,30);
+}
+
+function initApp(){
+  recalcDay();
+  const devo=renderDevotional();
+  if(!devo){
+    const v=VERSES[new Date().getDay()];
+    document.getElementById('dailyVerse').textContent=v.text;
+    document.getElementById('dailyRef').textContent='— '+v.ref;
+  }
+  document.getElementById('reflectPrompt').textContent=(devo&&devo.reflection)||REFLECT_PROMPTS[S.focus]||REFLECT_PROMPTS.all;
+  updateHeader();
+  renderReadingCard();
+  renderPractices();
+  renderSabbathCard();
+  renderReflections();
+  renderChallenges();
+  initSheep();
+  // Tree images are placeholders — app works with canvas background until images loaded
+  renderTree();
+  renderWeek();
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+if(S.onboarded){
+  document.getElementById('onboarding').style.display='none';
+  document.getElementById('mainApp').style.display='block';
+  document.getElementById('bottomNav').style.display='flex';
+  initApp();
+} else {
+  document.getElementById('mainApp').style.display='none';
+  document.getElementById('bottomNav').style.display='none';
+}
+
+window.addEventListener('resize',()=>{
+  const tToday=document.getElementById('tab-grow');
+  const tPasture=document.getElementById('tab-pasture');
+  if(tToday&&!tToday.classList.contains('hidden'))renderTree();
+  if(tPasture&&!tPasture.classList.contains('hidden'))renderPasture();
+});
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
