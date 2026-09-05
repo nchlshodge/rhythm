@@ -895,13 +895,44 @@ function drawProceduralTree(ctx,cx,gndY,size,type,stage){
     }
   }
 }
+// Real art per tree type, keyed by name -> [stage0.png, stage1.png, ... stage4.png].
+// A type with no entry here (or a stage that fails to load) falls back to the
+// procedural drawing, so new species/stages can be dropped in incrementally.
+const TREE_ART={
+  'Olive Tree':['trees/olive/stage0.png','trees/olive/stage1.png','trees/olive/stage2.png','trees/olive/stage3.png','trees/olive/stage4.png'],
+};
+const treeArtCache={};
+function getTreeArtImage(typeName,stage){
+  const paths=TREE_ART[typeName];
+  if(!paths||!paths[stage])return null;
+  const key=typeName+'-'+stage;
+  if(!treeArtCache[key]){
+    const img=new Image();
+    const entry={img,loaded:false,failed:false};
+    img.onload=()=>{entry.loaded=true;};
+    img.onerror=()=>{entry.failed=true;};
+    img.src=paths[stage];
+    treeArtCache[key]=entry;
+  }
+  const entry=treeArtCache[key];
+  return (entry.loaded&&!entry.failed)?entry.img:null;
+}
+// Draws real art if it's loaded for this type/stage, otherwise the procedural tree.
+function drawTreeAtStage(ctx,cx,gndY,size,type,stage){
+  const art=getTreeArtImage(type.name,stage);
+  if(art){
+    ctx.drawImage(art,cx-size/2,gndY-size*0.96,size,size);
+  } else {
+    drawProceduralTree(ctx,cx,gndY,size,type,stage);
+  }
+}
 function stageDataURL(type,stage){
   const c=document.createElement('canvas');
   c.width=400;c.height=400;
   const ctx=c.getContext('2d');
   ctx.fillStyle='#eaf2ec';
   ctx.beginPath();ctx.arc(200,200,190,0,Math.PI*2);ctx.fill();
-  drawProceduralTree(ctx,200,330,300,type,stage);
+  drawTreeAtStage(ctx,200,330,300,type,stage);
   return c.toDataURL();
 }
 function buildCinematicStages(type){
@@ -922,7 +953,7 @@ function renderGrove(){
     const c=document.createElement('canvas');
     c.width=144;c.height=144;
     const gctx=c.getContext('2d');
-    drawProceduralTree(gctx,72,122,120,type,4);
+    drawTreeAtStage(gctx,72,122,120,type,4);
     const label=document.createElement('span');
     label.textContent=type.emoji+' Month '+g.month;
     item.appendChild(c);item.appendChild(label);
@@ -998,7 +1029,7 @@ function drawTreeScene(){
   const day=getTreeDayInMonth();
   const stage=getTreeStage(day);
   const type=getTreeType(getMonthsSinceStart());
-  drawProceduralTree(ctx,W/2,gndY,W*0.66,type,stage);
+  drawTreeAtStage(ctx,W/2,gndY,W*0.66,type,stage);
 
   // WEEDS
   drawWeeds(ctx,W,H,gndY);

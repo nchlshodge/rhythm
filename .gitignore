@@ -1,4 +1,5 @@
 .DS_Store
+art/
 
 # Earlier prototype iterations and raw source assets — not part of the shipped app
 rhythm.html
@@ -16,8 +17,6 @@ tree_cinematic.mp4
 tree_stage*.jpg
 Tree/
 Tree.zip
-trees/
-trees.zip
 tree growth/
 treesampling.svg
 ~$*.docx
