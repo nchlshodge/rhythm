@@ -617,10 +617,18 @@ const SHEEP_LEG_META=[
   {legF:{x:94,y:278,w:73,h:61}, legB:{x:198,y:276,w:76,h:63}},
   {legF:{x:95,y:278,w:73,h:61}, legB:{x:192,y:276,w:83,h:63}},
 ];
+// Rare specialty sheep — costumed one-offs. Each needs a legMeta matching
+// its own leg-crop boxes (they won't line up with the regular flock's).
+const SHEEP_SPECIAL={
+  ninja:{
+    body:'sheep/ninja_body.png',legF:'sheep/ninja_legF.png',legB:'sheep/ninja_legB.png',
+    legMeta:{legF:{x:81,y:266,w:107,h:76}, legB:{x:180,y:266,w:108,h:78}},
+  },
+};
+const SHEEP_SPECIAL_CHANCE=0.08;
+
 const sheepArtCache={};
-function getSheepPart(index,part){
-  const set=SHEEP_ART[index%SHEEP_ART.length];
-  const path=set&&set[part];
+function getImagePart(path){
   if(!path)return null;
   if(!sheepArtCache[path]){
     const img=new Image();
@@ -632,6 +640,10 @@ function getSheepPart(index,part){
   }
   const entry=sheepArtCache[path];
   return (entry.loaded&&!entry.failed)?entry.img:null;
+}
+function getSheepPart(index,part){
+  const set=SHEEP_ART[index%SHEEP_ART.length];
+  return set?getImagePart(set[part]):null;
 }
 const CIN_CAPTIONS=['Your seed is planted.','The first leaves unfurl.','Roots go deep.','Branches reach wide.','A harvest of faithfulness.'];
 
@@ -1139,6 +1151,9 @@ function spawnSheep(silent){
   const gndY=cvs.height*0.62;
   const slots=[0.08,0.88,0.15,0.80,0.22,0.72,0.05,0.93,0.35,0.60];
   const x=W*(slots[sheepList.length%slots.length]+(Math.random()-0.5)*0.04);
+  // Deterministic by position (not re-rolled) so a given sheep's identity
+  // stays stable across reloads, same as its color/art variant does.
+  const isSpecial=((sheepList.length+1)%Math.round(1/SHEEP_SPECIAL_CHANCE))===0;
   sheepList.push({
     x,y:gndY,facing:Math.random()<0.5?1:-1,
     blink:Math.floor(Math.random()*250)+80,
@@ -1147,10 +1162,11 @@ function spawnSheep(silent){
     tx:x,speed:(0.3+Math.random()*0.3)*devicePixelRatio,
     wc:SHEEP_COLORS[sheepList.length%SHEEP_COLORS.length],
     artIndex:sheepList.length%SHEEP_ART.length,
+    special:isSpecial?'ninja':null,
     scale:0.85+Math.random()*0.3,
     walkPhase:Math.random()*Math.PI*2,legAmp:0,
   });
-  if(!silent)showToast('🐑 A sheep joined your pasture!');
+  if(!silent)showToast(isSpecial?'🥷 A ninja sheep slipped into your pasture!':'🐑 A sheep joined your pasture!');
 }
 
 function updateSheep(W){
@@ -1174,13 +1190,16 @@ function drawOneSheep(ctx,sh){
   const sc=devicePixelRatio*sh.scale;
   const x=sh.x,y=sh.y+Math.sin(sh.bob)*1.8*sc,f=sh.facing;
   const idx=sh.artIndex;
-  const body=getSheepPart(idx,'body'),legF=getSheepPart(idx,'legF'),legB=getSheepPart(idx,'legB');
+  const special=sh.special&&SHEEP_SPECIAL[sh.special];
+  const body=special?getImagePart(special.body):getSheepPart(idx,'body');
+  const legF=special?getImagePart(special.legF):getSheepPart(idx,'legF');
+  const legB=special?getImagePart(special.legB):getSheepPart(idx,'legB');
   if(body&&legF&&legB){
     const [cw,ch]=SHEEP_ART_CANVAS;
     const drawW=64*sc,drawH=drawW*(ch/cw),feetY=y+25*sc;
     const scaleR=drawW/cw;
     const bx=-drawW/2,by=feetY-drawH;
-    const meta=SHEEP_LEG_META[idx%SHEEP_LEG_META.length];
+    const meta=special?special.legMeta:SHEEP_LEG_META[idx%SHEEP_LEG_META.length];
     const stepPx=3*sc;
     const legFOff=Math.sin(sh.walkPhase)*stepPx*sh.legAmp;
     const legBOff=Math.sin(sh.walkPhase+Math.PI)*stepPx*sh.legAmp;
