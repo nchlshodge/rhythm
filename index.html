@@ -920,7 +920,10 @@ function getTreeArtImage(typeName,stage){
   if(!treeArtCache[key]){
     const img=new Image();
     const entry={img,loaded:false,failed:false};
-    img.onload=()=>{entry.loaded=true;};
+    // Grove thumbnails (and the cinematic) draw once and don't self-heal like
+    // the animated scene does, so re-render the grove once this image is
+    // actually ready in case it drew too early with the procedural fallback.
+    img.onload=()=>{entry.loaded=true;if(typeof renderGrove==='function')renderGrove();};
     img.onerror=()=>{entry.failed=true;};
     img.src=paths[stage];
     treeArtCache[key]=entry;
