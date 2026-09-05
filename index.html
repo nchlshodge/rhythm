@@ -382,7 +382,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       <div class="scene-wrap" style="margin-top:14px">
         <canvas id="pastureCanvas" width="800" height="500"></canvas>
       </div>
-      <div style="margin:0 16px 14px;text-align:right;">
+      <div style="margin:0 16px 14px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+        <button onclick="showGiftModal()" style="background:none;border:1px solid var(--border2);border-radius:20px;padding:6px 12px;font-size:12px;color:var(--text2);cursor:pointer;">🎁 Gifts &amp; friends</button>
         <button onclick="showBgTreeModal()" style="background:none;border:1px solid var(--border2);border-radius:20px;padding:6px 12px;font-size:12px;color:var(--text2);cursor:pointer;">🌳 Background trees</button>
       </div>
       <div class="pasture-stats">
@@ -488,6 +489,30 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <div id="bgTreeGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.25rem;"></div>
     <div class="modal-btns">
       <button class="btn-primary" onclick="closeBgTreeModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- GIFTS & FRIENDS MODAL -->
+<div class="modal-back" id="giftModal">
+  <div class="modal" style="max-width:380px;text-align:left;">
+    <h3 style="text-align:center;">🎁 Gifts &amp; Friends</h3>
+    <p style="text-align:center;">Send a sheep to a friend, or keep track of who you've sent to.</p>
+
+    <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:1rem 0 0.5rem;">Send a sheep</div>
+    <div id="giftTypeGrid" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0.75rem;"></div>
+    <input id="giftFromInput" type="text" placeholder="Your name (optional, shown to them)" style="width:100%;border:1.5px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:0.75rem;font-family:var(--font);color:var(--text);background:var(--surface);">
+    <button class="btn-primary" onclick="sendGiftFromModal()" style="margin-bottom:1.25rem;">Share gift link →</button>
+
+    <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.5rem;">Your friends</div>
+    <div id="friendsListWrap" style="display:flex;flex-direction:column;gap:6px;margin-bottom:0.75rem;"></div>
+    <div style="display:flex;gap:8px;margin-bottom:1.25rem;">
+      <input id="friendNameInput" type="text" placeholder="Add a friend's name" style="flex:1;border:1.5px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:13px;font-family:var(--font);color:var(--text);background:var(--surface);">
+      <button class="btn-secondary" style="width:auto;padding:10px 16px;margin:0;" onclick="addFriendFromModal()">Add</button>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeGiftModal()">Close</button>
     </div>
   </div>
 </div>
@@ -722,6 +747,8 @@ function loadState(){
     if(parsed.lastWeedCheck===undefined) parsed.lastWeedCheck=null;
     if(!parsed.treeMonthRecorded) parsed.treeMonthRecorded=1;
     if(!parsed.bgTrees) parsed.bgTrees=['Olive Tree','Cedar','Palm Tree'];
+    if(!parsed.giftLog) parsed.giftLog=[];
+    if(!parsed.friends) parsed.friends=[];
     return parsed;
   }
   return{
@@ -734,6 +761,7 @@ function loadState(){
     firstDayDone:false,
     gardenTrees:[],weeds:[],lastWeedCheck:null,treeMonthRecorded:1,
     bgTrees:['Olive Tree','Cedar','Palm Tree'],
+    giftLog:[],friends:[],
   };
 }
 let S=loadState();
@@ -1152,8 +1180,10 @@ function spawnSheep(silent){
   const slots=[0.08,0.88,0.15,0.80,0.22,0.72,0.05,0.93,0.35,0.60];
   const x=W*(slots[sheepList.length%slots.length]+(Math.random()-0.5)*0.04);
   // Deterministic by position (not re-rolled) so a given sheep's identity
-  // stays stable across reloads, same as its color/art variant does.
-  const isSpecial=((sheepList.length+1)%Math.round(1/SHEEP_SPECIAL_CHANCE))===0;
+  // stays stable across reloads, same as its color/art variant does — unless
+  // this slot was a gifted sheep, in which case it's whatever was gifted.
+  const gift=S.giftLog.find(g=>g.index===sheepList.length);
+  const isSpecial=gift?!!gift.special:((sheepList.length+1)%Math.round(1/SHEEP_SPECIAL_CHANCE))===0;
   sheepList.push({
     x,y:gndY,facing:Math.random()<0.5?1:-1,
     blink:Math.floor(Math.random()*250)+80,
@@ -1161,8 +1191,9 @@ function spawnSheep(silent){
     wander:Math.floor(Math.random()*350)+120,
     tx:x,speed:(0.3+Math.random()*0.3)*devicePixelRatio,
     wc:SHEEP_COLORS[sheepList.length%SHEEP_COLORS.length],
-    artIndex:sheepList.length%SHEEP_ART.length,
-    special:isSpecial?'ninja':null,
+    artIndex:gift&&gift.artIndex!=null?gift.artIndex:sheepList.length%SHEEP_ART.length,
+    special:isSpecial?(gift?gift.special:'ninja'):null,
+    gift:gift?{from:gift.from||null}:null,
     scale:0.85+Math.random()*0.3,
     walkPhase:Math.random()*Math.PI*2,legAmp:0,
   });
@@ -1511,6 +1542,134 @@ function showBgTreeModal(){
   document.getElementById('bgTreeModal').classList.add('show');
 }
 function closeBgTreeModal(){document.getElementById('bgTreeModal').classList.remove('show');}
+
+// ─── GIFTS (send a sheep via a shareable link — no backend required) ─────────
+function encodeGift(payload){
+  return btoa(encodeURIComponent(JSON.stringify(payload))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function decodeGift(str){
+  try{
+    const b64=str.replace(/-/g,'+').replace(/_/g,'/');
+    return JSON.parse(decodeURIComponent(atob(b64)));
+  }catch(e){ return null; }
+}
+function sendableSheepTypes(){
+  // Only the colors that actually have matching art (SHEEP_ART.length),
+  // not all of SHEEP_COLORS — that array has extras used only by the
+  // procedural fallback, which would mismatch the art the recipient gets.
+  const types=SHEEP_COLORS.slice(0,SHEEP_ART.length).map((c,i)=>({kind:'color',artIndex:i,label:'Sheep '+(i+1),swatch:c}));
+  if(sheepList.some(s=>s.special==='ninja')) types.push({kind:'special',special:'ninja',label:'🥷 Ninja Sheep',swatch:'#1c1c24'});
+  return types;
+}
+function buildGiftLink(payload){
+  const url=new URL(location.href);
+  url.search='';url.hash='';
+  url.searchParams.set('gift',encodeGift(payload));
+  return url.toString();
+}
+async function shareGiftLink(payload,toName){
+  const link=buildGiftLink(payload);
+  const who=toName?` for ${toName}`:'';
+  const from=payload.f?`${payload.f} sent you`:'Here\'s';
+  const text=`${from} a sheep${who} for your Rhythm pasture! 🐑`;
+  if(navigator.share){
+    try{ await navigator.share({title:'A gift sheep 🐑',text,url:link}); return; }
+    catch(e){ /* cancelled or unsupported — fall through to copy */ }
+  }
+  try{ await navigator.clipboard.writeText(link); showToast('🔗 Gift link copied — paste it to a friend!'); }
+  catch(e){ showToast('Could not copy the link automatically.'); }
+}
+// Runs on every load; only acts if a ?gift=... param is present, and strips
+// it immediately so refreshing the page never redeems it twice.
+function checkForIncomingGift(){
+  const params=new URLSearchParams(location.search);
+  const giftParam=params.get('gift');
+  if(!giftParam) return;
+  const payload=decodeGift(giftParam);
+  params.delete('gift');
+  history.replaceState({},'',location.pathname+(params.toString()?'?'+params.toString():'')+location.hash);
+  if(!payload) return;
+  const entry={index:S.sheep, from:payload.f||null};
+  if(payload.t==='special') entry.special=payload.s;
+  else if(payload.t==='color') entry.artIndex=payload.i;
+  S.giftLog.push(entry);
+  S.sheep++;
+  saveState();
+  setTimeout(()=>showToast((payload.f?payload.f+' sent':'Someone sent')+' you a sheep! 🐑🎁'),600);
+}
+
+// ─── FRIENDS ──────────────────────────────────────────────────────────────────
+// Local-only address book for now — just nicknames you keep track of, with no
+// real identity or delivery behind them.
+// TODO: once a backend exists (e.g. Supabase, matching Scripture Scout's own
+// setup), replace this with real friend requests + server-mediated gift
+// delivery, so a gift can land in a friend's pasture automatically instead of
+// needing a manually-shared link, and incoming gifts can trigger a
+// notification rather than only appearing next time they open the app.
+function addFriend(name){
+  name=(name||'').trim();
+  if(!name) return;
+  S.friends.push({id:Date.now()+Math.random(),name,addedDate:today()});
+  saveState();
+  renderFriendsList();
+}
+function removeFriend(id){
+  S.friends=S.friends.filter(f=>f.id!==id);
+  saveState();
+  renderFriendsList();
+}
+function syncFriendsWithServer(){ /* no-op stub — see TODO above */ }
+function renderFriendsList(){
+  const wrap=document.getElementById('friendsListWrap');
+  if(!wrap) return;
+  if(!S.friends.length){
+    wrap.innerHTML='<div class="empty-state" style="padding:0.5rem 0;">No friends added yet.</div>';
+    return;
+  }
+  wrap.innerHTML=S.friends.map(f=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border-radius:10px;padding:8px 10px;">
+      <span style="font-size:13px;color:var(--text);">${f.name}</span>
+      <span style="display:flex;gap:10px;align-items:center;">
+        <button onclick="sendGiftFromModal('${f.name.replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--green);font-size:12px;cursor:pointer;padding:0;">Send</button>
+        <button onclick="removeFriend(${f.id})" aria-label="Remove ${f.name}" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:0;">✕</button>
+      </span>
+    </div>`).join('');
+}
+function addFriendFromModal(){
+  const input=document.getElementById('friendNameInput');
+  addFriend(input.value);
+  input.value='';
+}
+
+let selectedGiftType=null;
+function renderGiftTypeGrid(){
+  const grid=document.getElementById('giftTypeGrid');
+  const types=sendableSheepTypes();
+  if(!selectedGiftType) selectedGiftType=types[0];
+  grid.innerHTML=types.map((t,i)=>{
+    const sel=selectedGiftType&&selectedGiftType.label===t.label;
+    return `<div onclick="selectGiftType(${i})" title="${t.label}" style="width:34px;height:34px;border-radius:50%;background:${t.swatch};border:2.5px solid ${sel?'var(--green)':'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;">${t.kind==='special'?'🥷':''}</div>`;
+  }).join('');
+}
+function selectGiftType(i){
+  selectedGiftType=sendableSheepTypes()[i];
+  renderGiftTypeGrid();
+}
+function sendGiftFromModal(toName){
+  if(!selectedGiftType){showToast('Pick a sheep to send first.');return;}
+  const from=document.getElementById('giftFromInput').value.trim();
+  const payload=selectedGiftType.kind==='special'
+    ? {t:'special',s:selectedGiftType.special}
+    : {t:'color',i:selectedGiftType.artIndex};
+  if(from) payload.f=from;
+  shareGiftLink(payload,toName);
+}
+function showGiftModal(){
+  renderGiftTypeGrid();
+  renderFriendsList();
+  document.getElementById('giftModal').classList.add('show');
+}
+function closeGiftModal(){document.getElementById('giftModal').classList.remove('show');}
 function useSabbathRest(){
   if(S.sabbathRests<=0)return;
   S.sabbathRests--;S.streak=Math.max(S.streak,1);saveState();
@@ -1668,6 +1827,7 @@ function initApp(){
 }
 
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
+checkForIncomingGift();
 if(S.onboarded){
   document.getElementById('onboarding').style.display='none';
   document.getElementById('mainApp').style.display='block';
