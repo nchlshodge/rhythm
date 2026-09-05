@@ -382,6 +382,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       <div class="scene-wrap" style="margin-top:14px">
         <canvas id="pastureCanvas" width="800" height="500"></canvas>
       </div>
+      <div style="margin:0 16px 14px;text-align:right;">
+        <button onclick="showBgTreeModal()" style="background:none;border:1px solid var(--border2);border-radius:20px;padding:6px 12px;font-size:12px;color:var(--text2);cursor:pointer;">🌳 Background trees</button>
+      </div>
       <div class="pasture-stats">
         <div class="pstat"><div class="pstat-num" id="sheepCount">0</div><div class="pstat-lbl">Sheep in flock</div></div>
         <div class="pstat"><div class="pstat-num" id="challengesDone">0</div><div class="pstat-lbl">Acts of love</div></div>
@@ -473,6 +476,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <div class="modal-btns">
       <button class="btn-primary" onclick="useSabbathRest()" id="useSabbathBtn">Use a Rest</button>
       <button class="btn-secondary" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- BACKGROUND TREES MODAL -->
+<div class="modal-back" id="bgTreeModal">
+  <div class="modal" style="max-width:380px;">
+    <h3>🌳 Background Trees</h3>
+    <p>Pick which trees grow in your pasture's background. Tap to toggle.</p>
+    <div id="bgTreeGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.25rem;"></div>
+    <div class="modal-btns">
+      <button class="btn-primary" onclick="closeBgTreeModal()">Done</button>
     </div>
   </div>
 </div>
@@ -694,6 +709,7 @@ function loadState(){
     if(!parsed.weeds) parsed.weeds=[];
     if(parsed.lastWeedCheck===undefined) parsed.lastWeedCheck=null;
     if(!parsed.treeMonthRecorded) parsed.treeMonthRecorded=1;
+    if(!parsed.bgTrees) parsed.bgTrees=['Olive Tree','Cedar','Palm Tree'];
     return parsed;
   }
   return{
@@ -705,6 +721,7 @@ function loadState(){
     gardenCooldowns:{},gardenWater:0,gardenSun:0,gardenPray:0,
     firstDayDone:false,
     gardenTrees:[],weeds:[],lastWeedCheck:null,treeMonthRecorded:1,
+    bgTrees:['Olive Tree','Cedar','Palm Tree'],
   };
 }
 let S=loadState();
@@ -793,6 +810,7 @@ const TREE_TYPES=[
   {name:'Terebinth',    emoji:'🌿', canopy:'#5A7A48', canopy2:'#7A9A62', trunk:'#6E5238', fruit:'#9A7A48'},
 ];
 function getTreeType(monthNum){ return TREE_TYPES[(Math.max(1,monthNum)-1)%TREE_TYPES.length]; }
+function getTreeTypeByName(name){ return TREE_TYPES.find(t=>t.name===name)||TREE_TYPES[0]; }
 
 function getTreeDayInMonth(){
   if(!S.startDate) return 1;
@@ -1230,12 +1248,19 @@ function drawPastureScene(){
   gg.addColorStop(0,'#88c048');gg.addColorStop(0.4,'#60982a');gg.addColorStop(1,'#3a6018');
   ctx.fillStyle=gg;ctx.fillRect(0,gndY,W,H-gndY);
 
-  // distant trees on horizon
-  [[W*0.05,gndY-H*0.08],[W*0.92,gndY-H*0.06],[W*0.82,gndY-H*0.1]].forEach(([tx,ty])=>{
-    ctx.fillStyle='#4a7830';
-    ctx.beginPath();ctx.arc(tx,ty,18,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#3a6025';ctx.fillRect(tx-3,ty,6,H*0.08);
+  // distant trees on horizon — species picked in Background Trees settings,
+  // cycling through the pick if there are more slots than choices
+  const bgList=(S.bgTrees&&S.bgTrees.length)?S.bgTrees:['Olive Tree'];
+  // ty values sit exactly on the rolling-hill bezier curve above (traced
+  // numerically), with a small negative margin so the base is embedded in
+  // the hill rather than floating just above it.
+  const bgSlots=[[W*0.05,gndY-H*0.008,0.85],[W*0.92,gndY-H*0.035,1.0],[W*0.82,gndY-H*0.045,0.8]];
+  ctx.save();ctx.globalAlpha=0.82;
+  bgSlots.forEach(([tx,ty,relSize],i)=>{
+    const type=getTreeTypeByName(bgList[i%bgList.length]);
+    drawTreeAtStage(ctx,tx,ty,W*0.16*relSize,type,4);
   });
+  ctx.restore();
 
   // FENCE
   ctx.strokeStyle='#c8a870';ctx.lineWidth=3;
@@ -1439,6 +1464,34 @@ function showSabbathModal(){
   document.getElementById('sabbathModal').classList.add('show');
 }
 function closeModal(){document.getElementById('sabbathModal').classList.remove('show');}
+
+// ─── BACKGROUND TREES ─────────────────────────────────────────────────────────
+function renderBgTreeGrid(){
+  const grid=document.getElementById('bgTreeGrid');
+  grid.innerHTML=TREE_TYPES.map(t=>{
+    const sel=S.bgTrees.includes(t.name);
+    return `<div class="habit-card${sel?' selected':''}" onclick="toggleBgTree('${t.name}')" style="padding:0.7rem 0.4rem;">
+      <div class="hc-icon" style="font-size:20px;margin-bottom:4px;">${t.emoji}</div>
+      <div class="hc-name" style="font-size:12px;">${t.name}</div>
+    </div>`;
+  }).join('');
+}
+function toggleBgTree(name){
+  const i=S.bgTrees.indexOf(name);
+  if(i>=0){
+    if(S.bgTrees.length<=1){showToast('Keep at least one background tree.');return;}
+    S.bgTrees.splice(i,1);
+  } else {
+    S.bgTrees.push(name);
+  }
+  saveState();
+  renderBgTreeGrid();
+}
+function showBgTreeModal(){
+  renderBgTreeGrid();
+  document.getElementById('bgTreeModal').classList.add('show');
+}
+function closeBgTreeModal(){document.getElementById('bgTreeModal').classList.remove('show');}
 function useSabbathRest(){
   if(S.sabbathRests<=0)return;
   S.sabbathRests--;S.streak=Math.max(S.streak,1);saveState();
