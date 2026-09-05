@@ -239,6 +239,26 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 /* PARTICLE */
 @keyframes pop{0%{transform:scale(0) translate(0,0);opacity:1;}100%{transform:scale(1.4) translate(var(--tx),var(--ty));opacity:0;}}
 .particle{position:fixed;pointer-events:none;font-size:16px;animation:pop 0.85s ease-out forwards;z-index:400;}
+
+/* BIBLE READER */
+.reader-overlay{display:none;position:fixed;inset:0;background:var(--bg);z-index:250;flex-direction:column;}
+.reader-overlay.show{display:flex;}
+.reader-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border);}
+.reader-ref{font-family:var(--serif);font-size:17px;font-weight:700;color:var(--green);}
+.reader-close{background:none;border:none;font-size:18px;color:var(--text3);cursor:pointer;padding:4px;}
+.reader-body{flex:1;overflow-y:auto;padding:1.5rem 1.5rem 1rem;display:flex;align-items:center;justify-content:center;}
+.reader-loading{font-size:13px;color:var(--text3);}
+.reader-page{max-width:520px;}
+.reader-page p{font-family:var(--serif);font-size:19px;line-height:1.85;color:var(--text);margin-bottom:1.1rem;}
+.reader-vnum{font-size:12px;font-weight:700;color:var(--green);vertical-align:super;margin-right:5px;}
+.reader-controls{display:flex;align-items:center;justify-content:center;gap:1.25rem;padding:0.5rem 1rem;}
+.reader-nav{background:var(--surface2);border:none;width:44px;height:44px;border-radius:50%;font-size:20px;color:var(--text);cursor:pointer;}
+.reader-nav:disabled{opacity:0.3;cursor:default;}
+.reader-dots{display:flex;gap:6px;}
+.reader-dot{width:6px;height:6px;border-radius:50%;background:var(--border2);}
+.reader-dot.active{background:var(--green);}
+.reader-footer{padding:0.75rem 1.25rem 1.25rem;text-align:center;}
+.reader-listen{background:none;border:1px solid var(--border2);border-radius:20px;padding:8px 16px;font-size:13px;color:var(--text2);cursor:pointer;}
 </style>
 </head>
 <body>
@@ -296,6 +316,26 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <img class="cin-img" id="cinImg" src="" alt="">
   <div class="cin-caption" id="cinCaption"></div>
   <button class="cin-skip" onclick="skipCinematic()">Skip →</button>
+</div>
+
+<!-- BIBLE READER -->
+<div class="reader-overlay" id="readerOverlay">
+  <div class="reader-header">
+    <div class="reader-ref" id="readerRef">Reading</div>
+    <button class="reader-close" onclick="closeReader()" aria-label="Close">✕</button>
+  </div>
+  <div class="reader-body">
+    <div class="reader-loading" id="readerLoading">Loading…</div>
+    <div class="reader-page" id="readerPage" style="display:none"></div>
+  </div>
+  <div class="reader-controls">
+    <button class="reader-nav" id="readerPrev" onclick="readerGo(-1)" aria-label="Previous">‹</button>
+    <div class="reader-dots" id="readerDots"></div>
+    <button class="reader-nav" id="readerNext" onclick="readerGo(1)" aria-label="Next">›</button>
+  </div>
+  <div class="reader-footer">
+    <button class="reader-listen" id="readerListenBtn" onclick="toggleReadAloud()">🔊 Read to me</button>
+  </div>
 </div>
 
 <!-- MAIN APP -->
@@ -1403,16 +1443,97 @@ function renderReadingCard(){
   document.getElementById('planDayBadge').textContent = 'Day '+plan.day;
   document.getElementById('planTheme').textContent = plan.theme;
   const rows = [
-    {icon:'📖', label:'NT', ref: planRef(plan.nt), color:'var(--green-text)', bg:'var(--green-bg)', border:'rgba(74,124,89,0.15)'},
-    {icon:'📜', label:'OT', ref: planRef(plan.ot), color:'var(--text2)',      bg:'var(--surface2)', border:'var(--border)'},
-    {icon:'🎵', label:plan.ps.book==='Proverbs'?'Proverbs':'Psalm', ref: planRef(plan.ps), color:'var(--gold-text)', bg:'var(--gold-bg)', border:'rgba(154,116,32,0.12)'},
+    {icon:'📖', label:'NT', book:plan.nt.book, chapter:plan.nt.chapter, ref: planRef(plan.nt), color:'var(--green-text)', bg:'var(--green-bg)', border:'rgba(74,124,89,0.15)'},
+    {icon:'📜', label:'OT', book:plan.ot.book, chapter:plan.ot.chapter, ref: planRef(plan.ot), color:'var(--text2)',      bg:'var(--surface2)', border:'var(--border)'},
+    {icon:'🎵', label:plan.ps.book==='Proverbs'?'Proverbs':'Psalm', book:plan.ps.book, chapter:plan.ps.chapter, ref: planRef(plan.ps), color:'var(--gold-text)', bg:'var(--gold-bg)', border:'rgba(154,116,32,0.12)'},
   ];
   document.getElementById('planCardRows').innerHTML = rows.map(r=>`
-    <div style="display:flex;align-items:center;gap:8px;background:${r.bg};border:1px solid ${r.border};border-radius:7px;padding:7px 10px;">
+    <div onclick="openReader(event,'${r.book}',${r.chapter})" style="display:flex;align-items:center;gap:8px;background:${r.bg};border:1px solid ${r.border};border-radius:7px;padding:7px 10px;cursor:pointer;">
       <span style="font-size:14px">${r.icon}</span>
       <span style="font-size:11px;font-weight:600;color:${r.color};width:42px;flex-shrink:0">${r.label}</span>
       <span style="font-size:14px;font-weight:600;color:var(--text)">${r.ref}</span>
+      <span style="margin-left:auto;font-size:12px;color:var(--text3)">Read →</span>
     </div>`).join('');
+}
+
+// ─── BIBLE READER (KJV) ───────────────────────────────────────────────────────
+const VERSES_PER_PAGE=4;
+const bibleCache={};
+function bibleFilename(book){ return book==='Psalm' ? 'Psalms' : book.replace(/\s+/g,''); }
+async function loadBibleBook(book){
+  const fname=bibleFilename(book);
+  if(bibleCache[fname]) return bibleCache[fname];
+  const res=await fetch('bible/kjv/'+fname+'.json');
+  if(!res.ok) throw new Error('Could not load '+book);
+  const data=await res.json();
+  bibleCache[fname]=data;
+  return data;
+}
+let readerState=null;
+function openReader(e,book,chapter){
+  if(e&&e.stopPropagation) e.stopPropagation();
+  document.getElementById('readerOverlay').classList.add('show');
+  document.getElementById('readerRef').textContent=book+' '+chapter;
+  document.getElementById('readerLoading').style.display='block';
+  document.getElementById('readerLoading').textContent='Loading…';
+  document.getElementById('readerPage').style.display='none';
+  document.getElementById('readerPage').innerHTML='';
+  document.getElementById('readerDots').innerHTML='';
+  stopReadAloud();
+  loadBibleBook(book).then(data=>{
+    const chData=(data.chapters||[]).find(c=>c.chapter===String(chapter));
+    const verses=chData?chData.verses:[];
+    const pages=[];
+    for(let i=0;i<verses.length;i+=VERSES_PER_PAGE) pages.push(verses.slice(i,i+VERSES_PER_PAGE));
+    readerState={book,chapter,pages,pageIndex:0};
+    document.getElementById('readerLoading').style.display='none';
+    document.getElementById('readerPage').style.display='block';
+    renderReaderPage();
+  }).catch(()=>{
+    document.getElementById('readerLoading').textContent='Could not load this passage.';
+  });
+}
+function renderReaderPage(){
+  if(!readerState) return;
+  const page=readerState.pages[readerState.pageIndex]||[];
+  document.getElementById('readerPage').innerHTML=page.map(v=>
+    `<p><span class="reader-vnum">${v.verse}</span>${v.text}</p>`).join('');
+  document.getElementById('readerDots').innerHTML=readerState.pages.map((_,i)=>
+    `<span class="reader-dot${i===readerState.pageIndex?' active':''}"></span>`).join('');
+  document.getElementById('readerPrev').disabled=readerState.pageIndex===0;
+  document.getElementById('readerNext').disabled=readerState.pageIndex===readerState.pages.length-1;
+  stopReadAloud();
+}
+function readerGo(delta){
+  if(!readerState) return;
+  const next=readerState.pageIndex+delta;
+  if(next<0||next>=readerState.pages.length) return;
+  readerState.pageIndex=next;
+  renderReaderPage();
+}
+function closeReader(){
+  document.getElementById('readerOverlay').classList.remove('show');
+  stopReadAloud();
+  readerState=null;
+}
+// Read-to-me — Bible reading only, using the browser's built-in speech
+// synthesis (no backend, no cost, works fully offline once the page is loaded).
+function toggleReadAloud(){
+  if(!('speechSynthesis' in window)){ showToast("Read-aloud isn't supported on this device."); return; }
+  if(speechSynthesis.speaking){ stopReadAloud(); return; }
+  if(!readerState) return;
+  const page=readerState.pages[readerState.pageIndex]||[];
+  const text=page.map(v=>v.text).join(' ');
+  const utter=new SpeechSynthesisUtterance(text);
+  utter.rate=0.95;
+  utter.onend=()=>{ const b=document.getElementById('readerListenBtn'); if(b) b.textContent='🔊 Read to me'; };
+  document.getElementById('readerListenBtn').textContent='⏸ Stop';
+  speechSynthesis.speak(utter);
+}
+function stopReadAloud(){
+  if('speechSynthesis' in window && speechSynthesis.speaking) speechSynthesis.cancel();
+  const b=document.getElementById('readerListenBtn');
+  if(b) b.textContent='🔊 Read to me';
 }
 
 // ─── PRACTICES ───────────────────────────────────────────────────────────────
