@@ -581,6 +581,43 @@ const REFLECT_PROMPTS={
   all:'Where did you notice God today? What are you carrying that needs to be laid down?',
 };
 const SHEEP_COLORS=['#f5f0e8','#e8d5b0','#c8d0c0','#d4c8e0','#e0c8c8','#c8e0d0','#d8d0b8','#e0d8c0'];
+// Real sheep art, one per coat-color variant. Each is split into a static
+// body (legs erased) plus two independent leg-pair cutouts so they can swing
+// out of phase for a walk cycle. Drawn facing right; flipped in code for
+// sheep walking left. Falls back to the procedural sheep if a given index
+// hasn't finished loading (or fails), same pattern as the tree art.
+const SHEEP_ART_CANVAS=[420,360];
+const SHEEP_ART=[0,1,2,3,4,5].map(i=>({
+  body:`sheep/sheep${i}_body.png`,
+  legF:`sheep/sheep${i}_legF.png`,
+  legB:`sheep/sheep${i}_legB.png`,
+}));
+// Leg-pair bounding boxes within the 420x360 art canvas (x,y,w,h), used to
+// position each leg cutout back onto the body at the same scale.
+const SHEEP_LEG_META=[
+  {legF:{x:96,y:278,w:72,h:61}, legB:{x:194,y:276,w:80,h:63}},
+  {legF:{x:94,y:276,w:92,h:62}, legB:{x:178,y:276,w:96,h:63}},
+  {legF:{x:96,y:276,w:73,h:62}, legB:{x:193,y:276,w:82,h:63}},
+  {legF:{x:95,y:276,w:77,h:63}, legB:{x:186,y:276,w:88,h:63}},
+  {legF:{x:94,y:278,w:73,h:61}, legB:{x:198,y:276,w:76,h:63}},
+  {legF:{x:95,y:278,w:73,h:61}, legB:{x:192,y:276,w:83,h:63}},
+];
+const sheepArtCache={};
+function getSheepPart(index,part){
+  const set=SHEEP_ART[index%SHEEP_ART.length];
+  const path=set&&set[part];
+  if(!path)return null;
+  if(!sheepArtCache[path]){
+    const img=new Image();
+    const entry={img,loaded:false,failed:false};
+    img.onload=()=>{entry.loaded=true;};
+    img.onerror=()=>{entry.failed=true;};
+    img.src=path;
+    sheepArtCache[path]=entry;
+  }
+  const entry=sheepArtCache[path];
+  return (entry.loaded&&!entry.failed)?entry.img:null;
+}
 const CIN_CAPTIONS=['Your seed is planted.','The first leaves unfurl.','Roots go deep.','Branches reach wide.','A harvest of faithfulness.'];
 
 // ─── MONTH 1 DEVOTIONAL CONTENT ─────────────────────────────────────────────
@@ -1091,7 +1128,9 @@ function spawnSheep(silent){
     wander:Math.floor(Math.random()*350)+120,
     tx:x,speed:(0.3+Math.random()*0.3)*devicePixelRatio,
     wc:SHEEP_COLORS[sheepList.length%SHEEP_COLORS.length],
+    artIndex:sheepList.length%SHEEP_ART.length,
     scale:0.85+Math.random()*0.3,
+    walkPhase:Math.random()*Math.PI*2,legAmp:0,
   });
   if(!silent)showToast('🐑 A sheep joined your pasture!');
 }
@@ -1106,13 +1145,37 @@ function updateSheep(W){
       sh.wander=Math.floor(Math.random()*400)+120;
       sh.facing=sh.tx>sh.x?1:-1;
     }
-    if(Math.abs(sh.tx-sh.x)>2)sh.x+=Math.sign(sh.tx-sh.x)*sh.speed;
+    const moving=Math.abs(sh.tx-sh.x)>2;
+    if(moving)sh.x+=Math.sign(sh.tx-sh.x)*sh.speed;
+    sh.legAmp=moving?Math.min(1,sh.legAmp+0.08):Math.max(0,sh.legAmp-0.08);
+    if(sh.legAmp>0)sh.walkPhase+=0.3;
   });
 }
 
 function drawOneSheep(ctx,sh){
   const sc=devicePixelRatio*sh.scale;
   const x=sh.x,y=sh.y+Math.sin(sh.bob)*1.8*sc,f=sh.facing;
+  const idx=sh.artIndex;
+  const body=getSheepPart(idx,'body'),legF=getSheepPart(idx,'legF'),legB=getSheepPart(idx,'legB');
+  if(body&&legF&&legB){
+    const [cw,ch]=SHEEP_ART_CANVAS;
+    const drawW=64*sc,drawH=drawW*(ch/cw),feetY=y+25*sc;
+    const scaleR=drawW/cw;
+    const bx=-drawW/2,by=feetY-drawH;
+    const meta=SHEEP_LEG_META[idx%SHEEP_LEG_META.length];
+    const stepPx=3*sc;
+    const legFOff=Math.sin(sh.walkPhase)*stepPx*sh.legAmp;
+    const legBOff=Math.sin(sh.walkPhase+Math.PI)*stepPx*sh.legAmp;
+    ctx.save();
+    ctx.translate(x,0);ctx.scale(f,1);
+    ctx.drawImage(body,bx,by,drawW,drawH);
+    const fb=meta.legF;
+    ctx.drawImage(legF,bx+fb.x*scaleR,by+fb.y*scaleR+legFOff,fb.w*scaleR,fb.h*scaleR);
+    const bb=meta.legB;
+    ctx.drawImage(legB,bx+bb.x*scaleR,by+bb.y*scaleR+legBOff,bb.w*scaleR,bb.h*scaleR);
+    ctx.restore();
+    return;
+  }
   ctx.fillStyle=sh.wc;
   ctx.beginPath();ctx.ellipse(x,y,20*sc,13*sc,0,0,Math.PI*2);ctx.fill();
   [[0,-13],[12,-8],[-12,-8],[16,0],[-16,0],[8,8],[-8,8]].forEach(([ox,oy])=>{
