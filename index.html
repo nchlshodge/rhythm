@@ -557,6 +557,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
 </div>
 
+<!-- SHEEP VIDEO MODAL -->
+<div class="modal-back" id="sheepVideoModal" onclick="if(event.target===this)closeSheepVideoModal()">
+  <div class="modal" style="max-width:380px;padding:0;overflow:hidden;">
+    <video id="sheepVideoPlayer" style="width:100%;display:block;background:#000;" playsinline muted controls onended="closeSheepVideoModal()"></video>
+    <div class="modal-btns" style="padding:0.85rem;">
+      <button class="btn-secondary" onclick="closeSheepVideoModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -800,6 +810,16 @@ const SHEEP_SPECIAL={
   ninja:{
     body:'sheep/ninja_body.png',legF:'sheep/ninja_legF.png',legB:'sheep/ninja_legB.png',
     legMeta:{legF:{x:81,y:266,w:107,h:76}, legB:{x:180,y:266,w:108,h:78}},
+    label:'🥷 Ninja Sheep',swatch:'#1c1c24',
+    joinMsg:'🥷 A ninja sheep slipped into your pasture!',
+    videos:['sheep/videos/ninja-forest.mp4'],
+  },
+  samurai:{
+    body:'sheep/samurai_body.png',legF:'sheep/samurai_legF.png',legB:'sheep/samurai_legB.png',
+    legMeta:{legF:{x:55,y:250,w:125,h:85}, legB:{x:190,y:250,w:110,h:85}},
+    label:'⚔️ Samurai Sheep',swatch:'#8a1c1c',
+    joinMsg:'⚔️ A samurai sheep marched into your pasture!',
+    videos:['sheep/videos/samurai-hangout.mp4','sheep/videos/samurai-swordfight.mp4'],
   },
 };
 const SHEEP_SPECIAL_CHANCE=0.08;
@@ -1336,6 +1356,8 @@ function spawnSheep(silent){
   // this slot was a gifted sheep, in which case it's whatever was gifted.
   const gift=S.giftLog.find(g=>g.index===sheepList.length);
   const isSpecial=gift?!!gift.special:((sheepList.length+1)%Math.round(1/SHEEP_SPECIAL_CHANCE))===0;
+  const specialKeys=Object.keys(SHEEP_SPECIAL);
+  const specialKey=gift?gift.special:specialKeys[sheepList.length%specialKeys.length];
   sheepList.push({
     x,y:gndY,facing:Math.random()<0.5?1:-1,
     blink:Math.floor(Math.random()*250)+80,
@@ -1344,12 +1366,12 @@ function spawnSheep(silent){
     tx:x,speed:(0.3+Math.random()*0.3)*devicePixelRatio,
     wc:SHEEP_COLORS[sheepList.length%SHEEP_COLORS.length],
     artIndex:gift&&gift.artIndex!=null?gift.artIndex:sheepList.length%SHEEP_ART.length,
-    special:isSpecial?(gift?gift.special:'ninja'):null,
+    special:isSpecial?specialKey:null,
     gift:gift?{from:gift.from||null}:null,
     scale:0.85+Math.random()*0.3,
     walkPhase:Math.random()*Math.PI*2,legAmp:0,
   });
-  if(!silent)showToast(isSpecial?'🥷 A ninja sheep slipped into your pasture!':'🐑 A sheep joined your pasture!');
+  if(!silent)showToast(isSpecial?SHEEP_SPECIAL[specialKey].joinMsg:'🐑 A sheep joined your pasture!');
 }
 
 function updateSheep(W){
@@ -1496,6 +1518,53 @@ function drawPastureScene(){
   pastureAnimReq=requestAnimationFrame(drawPastureScene);
 }
 
+function onPastureCanvasClick(e){
+  const cvs=document.getElementById('pastureCanvas');
+  const special=pastureSheepAt(cvs,e.clientX,e.clientY);
+  if(special) openSheepVideoModal(special.videos[Math.floor(Math.random()*special.videos.length)]);
+}
+function pastureSheepAt(cvs,clientX,clientY){
+  const rect=cvs.getBoundingClientRect();
+  const scaleX=cvs.width/rect.width,scaleY=cvs.height/rect.height;
+  const x=(clientX-rect.left)*scaleX,y=(clientY-rect.top)*scaleY;
+  for(let i=sheepList.length-1;i>=0;i--){
+    const sh=sheepList[i];
+    const special=sh.special&&SHEEP_SPECIAL[sh.special];
+    if(!special||!special.videos||!special.videos.length)continue;
+    const sc=devicePixelRatio*sh.scale;
+    const sy=sh.y+Math.sin(sh.bob)*1.8*sc;
+    const [cw,ch]=SHEEP_ART_CANVAS;
+    const drawW=64*sc,drawH=drawW*(ch/cw),feetY=sy+25*sc;
+    const left=sh.x-drawW/2,top=feetY-drawH;
+    if(x>=left&&x<=left+drawW&&y>=top&&y<=feetY) return special;
+  }
+  return null;
+}
+let pastureClickBound=false;
+function bindPastureClick(){
+  if(pastureClickBound) return;
+  const cvs=document.getElementById('pastureCanvas');
+  if(!cvs) return;
+  cvs.addEventListener('click',onPastureCanvasClick);
+  cvs.addEventListener('mousemove',e=>{
+    cvs.style.cursor=pastureSheepAt(cvs,e.clientX,e.clientY)?'pointer':'default';
+  });
+  pastureClickBound=true;
+}
+function openSheepVideoModal(src){
+  const modal=document.getElementById('sheepVideoModal');
+  const video=document.getElementById('sheepVideoPlayer');
+  video.src=src;
+  modal.classList.add('show');
+  video.currentTime=0;
+  video.play().catch(()=>{});
+}
+function closeSheepVideoModal(){
+  const video=document.getElementById('sheepVideoPlayer');
+  video.pause();video.src='';
+  document.getElementById('sheepVideoModal').classList.remove('show');
+}
+
 function renderPasture(){
   if(pastureAnimReq)cancelAnimationFrame(pastureAnimReq);
   const cvs=document.getElementById('pastureCanvas');
@@ -1503,6 +1572,7 @@ function renderPasture(){
   const w=cvs.offsetWidth;
   cvs.width=w*devicePixelRatio;cvs.height=Math.round(w*0.62)*devicePixelRatio;
   cvs.style.height=Math.round(w*0.62)+'px';
+  bindPastureClick();
   sheepList.forEach(sh=>{
     const gndY=cvs.height*0.62;
     sh.y=gndY;sh.x=sh.x*(cvs.width/800)||cvs.width/2;
@@ -1791,7 +1861,12 @@ function sendableSheepTypes(){
   // not all of SHEEP_COLORS — that array has extras used only by the
   // procedural fallback, which would mismatch the art the recipient gets.
   const types=SHEEP_COLORS.slice(0,SHEEP_ART.length).map((c,i)=>({kind:'color',artIndex:i,label:'Sheep '+(i+1),swatch:c}));
-  if(sheepList.some(s=>s.special==='ninja')) types.push({kind:'special',special:'ninja',label:'🥷 Ninja Sheep',swatch:'#1c1c24'});
+  Object.keys(SHEEP_SPECIAL).forEach(key=>{
+    if(sheepList.some(s=>s.special===key)){
+      const sp=SHEEP_SPECIAL[key];
+      types.push({kind:'special',special:key,label:sp.label,swatch:sp.swatch});
+    }
+  });
   return types;
 }
 function buildGiftLink(payload){

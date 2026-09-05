@@ -1,5 +1,6 @@
 .DS_Store
 art/
+video/
 
 # Earlier prototype iterations and raw source assets — not part of the shipped app
 rhythm.html
