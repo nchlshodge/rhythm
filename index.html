@@ -794,6 +794,7 @@ const SHEEP_ART=[0,1,2,3,4,5].map(i=>({
   legF:`sheep/sheep${i}_legF.png`,
   legB:`sheep/sheep${i}_legB.png`,
 }));
+SHEEP_ART[0].videos=['sheep/videos/white-hangout.mp4'];
 // Leg-pair bounding boxes within the 420x360 art canvas (x,y,w,h), used to
 // position each leg cutout back onto the body at the same scale.
 const SHEEP_LEG_META=[
@@ -820,6 +821,36 @@ const SHEEP_SPECIAL={
     label:'⚔️ Samurai Sheep',swatch:'#8a1c1c',
     joinMsg:'⚔️ A samurai sheep marched into your pasture!',
     videos:['sheep/videos/samurai-hangout.mp4','sheep/videos/samurai-swordfight.mp4'],
+  },
+  cowboy:{
+    body:'sheep/cowboy_body.png',legF:'sheep/cowboy_legF.png',legB:'sheep/cowboy_legB.png',
+    legMeta:{legF:{x:55,y:250,w:125,h:85}, legB:{x:190,y:250,w:110,h:85}},
+    label:'🤠 Cowboy Sheep',swatch:'#7a5230',
+    joinMsg:'🤠 A cowboy sheep mosied into your pasture!',
+  },
+  detective:{
+    body:'sheep/detective_body.png',legF:'sheep/detective_legF.png',legB:'sheep/detective_legB.png',
+    legMeta:{legF:{x:55,y:250,w:125,h:85}, legB:{x:190,y:250,w:110,h:85}},
+    label:'🕵️ Detective Sheep',swatch:'#9c7a44',
+    joinMsg:'🕵️ A detective sheep is on the case in your pasture!',
+  },
+  lion:{
+    body:'sheep/lion_body.png',legF:'sheep/lion_legF.png',legB:'sheep/lion_legB.png',
+    legMeta:{legF:{x:55,y:250,w:125,h:85}, legB:{x:190,y:250,w:110,h:85}},
+    label:'🦁 Lion Sheep',swatch:'#d89a2a',
+    joinMsg:'🦁 A lion sheep prowled into your pasture!',
+  },
+  superhero:{
+    body:'sheep/superhero_body.png',legF:'sheep/superhero_legF.png',legB:'sheep/superhero_legB.png',
+    legMeta:{legF:{x:55,y:250,w:125,h:85}, legB:{x:190,y:250,w:110,h:85}},
+    label:'🦸 Superhero Sheep',swatch:'#1c3f9c',
+    joinMsg:'🦸 A superhero sheep swooped into your pasture!',
+  },
+  wrestler:{
+    body:'sheep/wrestler_body.png',legF:'sheep/wrestler_legF.png',legB:'sheep/wrestler_legB.png',
+    legMeta:{legF:{x:55,y:250,w:125,h:85}, legB:{x:190,y:250,w:110,h:85}},
+    label:'🤼 Wrestler Sheep',swatch:'#b81c1c',
+    joinMsg:'🤼 A wrestler sheep body-slammed into your pasture!',
   },
 };
 const SHEEP_SPECIAL_CHANCE=0.08;
@@ -1005,6 +1036,40 @@ function skipCinematic(){
 // ─── TREE CANVAS ─────────────────────────────────────────────────────────────
 let treeAnimReq=null;
 let waterDrops=[],sunRays=0,praySparkles=[],weedBursts=[];
+
+// A bluebird that occasionally flies across the tree scene — purely decorative,
+// on its own random timer independent of anything the user does.
+let birdState={active:false,x:0,y:0,dir:1,speed:1,flapT:0,cooldown:Math.floor(200+Math.random()*400)};
+function updateAndDrawBird(ctx,W,H){
+  const b=birdState;
+  if(!b.active){
+    b.cooldown--;
+    if(b.cooldown<=0){
+      b.active=true;
+      b.dir=Math.random()<0.5?1:-1;
+      b.x=b.dir===1?-W*0.1:W*1.1;
+      b.y=H*(0.08+Math.random()*0.3);
+      b.speed=(1+Math.random()*0.8)*devicePixelRatio;
+      b.flapT=Math.random()*Math.PI*2;
+    }
+    return;
+  }
+  b.x+=b.dir*b.speed;
+  b.flapT+=0.15;
+  const img=getImagePart(Math.sin(b.flapT)>0?'bird/flap1.png':'bird/flap2.png');
+  if(img){
+    const drawW=42*devicePixelRatio,drawH=drawW*(img.naturalHeight/img.naturalWidth||1);
+    ctx.save();
+    ctx.translate(b.x,b.y+Math.sin(b.flapT*0.5)*6*devicePixelRatio);
+    ctx.scale(b.dir,1);
+    ctx.drawImage(img,-drawW/2,-drawH/2,drawW,drawH);
+    ctx.restore();
+  }
+  if((b.dir===1&&b.x>W*1.1)||(b.dir===-1&&b.x<-W*0.1)){
+    b.active=false;
+    b.cooldown=Math.floor(400+Math.random()*1400);
+  }
+}
 
 // One tree type per 30-day cycle, cycling through this list so every month looks different.
 const TREE_TYPES=[
@@ -1306,6 +1371,9 @@ function drawTreeScene(){
     ctx.beginPath();ctx.moveTo(p.x,p.y-4);ctx.lineTo(p.x,p.y+4);ctx.stroke();
   });
 
+  // BLUEBIRD
+  updateAndDrawBird(ctx,W,gndY);
+
   // TREE
   const day=getTreeDayInMonth();
   const stage=getTreeStage(day);
@@ -1518,10 +1586,14 @@ function drawPastureScene(){
   pastureAnimReq=requestAnimationFrame(drawPastureScene);
 }
 
+function sheepVideosFor(sh){
+  if(sh.special) return SHEEP_SPECIAL[sh.special]&&SHEEP_SPECIAL[sh.special].videos||null;
+  return SHEEP_ART[sh.artIndex]&&SHEEP_ART[sh.artIndex].videos||null;
+}
 function onPastureCanvasClick(e){
   const cvs=document.getElementById('pastureCanvas');
-  const special=pastureSheepAt(cvs,e.clientX,e.clientY);
-  if(special) openSheepVideoModal(special.videos[Math.floor(Math.random()*special.videos.length)]);
+  const videos=pastureSheepAt(cvs,e.clientX,e.clientY);
+  if(videos) openSheepVideoModal(videos[Math.floor(Math.random()*videos.length)]);
 }
 function pastureSheepAt(cvs,clientX,clientY){
   const rect=cvs.getBoundingClientRect();
@@ -1529,14 +1601,14 @@ function pastureSheepAt(cvs,clientX,clientY){
   const x=(clientX-rect.left)*scaleX,y=(clientY-rect.top)*scaleY;
   for(let i=sheepList.length-1;i>=0;i--){
     const sh=sheepList[i];
-    const special=sh.special&&SHEEP_SPECIAL[sh.special];
-    if(!special||!special.videos||!special.videos.length)continue;
+    const videos=sheepVideosFor(sh);
+    if(!videos||!videos.length)continue;
     const sc=devicePixelRatio*sh.scale;
     const sy=sh.y+Math.sin(sh.bob)*1.8*sc;
     const [cw,ch]=SHEEP_ART_CANVAS;
     const drawW=64*sc,drawH=drawW*(ch/cw),feetY=sy+25*sc;
     const left=sh.x-drawW/2,top=feetY-drawH;
-    if(x>=left&&x<=left+drawW&&y>=top&&y<=feetY) return special;
+    if(x>=left&&x<=left+drawW&&y>=top&&y<=feetY) return videos;
   }
   return null;
 }
