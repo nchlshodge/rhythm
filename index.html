@@ -854,6 +854,11 @@ const SHEEP_SPECIAL={
   },
 };
 const SHEEP_SPECIAL_CHANCE=0.08;
+// Master switch — specialty sheep (ninja, samurai, cowboy, etc.) are built and
+// ready, but held back from actually appearing until specific release rules
+// are defined (which ones, how often, tied to what). Flip to true to resume
+// the plain random-chance spawn below.
+const SPECIALTY_SHEEP_ENABLED=false;
 
 const sheepArtCache={};
 function getImagePart(path){
@@ -1423,7 +1428,7 @@ function spawnSheep(silent){
   // stays stable across reloads, same as its color/art variant does — unless
   // this slot was a gifted sheep, in which case it's whatever was gifted.
   const gift=S.giftLog.find(g=>g.index===sheepList.length);
-  const isSpecial=gift?!!gift.special:((sheepList.length+1)%Math.round(1/SHEEP_SPECIAL_CHANCE))===0;
+  const isSpecial=gift?!!gift.special:(SPECIALTY_SHEEP_ENABLED&&((sheepList.length+1)%Math.round(1/SHEEP_SPECIAL_CHANCE))===0);
   const specialKeys=Object.keys(SHEEP_SPECIAL);
   const specialKey=gift?gift.special:specialKeys[sheepList.length%specialKeys.length];
   sheepList.push({
