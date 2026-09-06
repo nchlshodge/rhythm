@@ -974,7 +974,11 @@ function loadState(){
 }
 let S=loadState();
 function saveState(){localStorage.setItem('rhythm_v1',JSON.stringify(S));}
-function today(){return new Date().toISOString().slice(0,10);}
+// Local calendar date (device's own timezone), NOT toISOString() — that
+// formats in UTC and would roll the day over at UTC midnight instead of
+// wherever the user actually is, hours off from their real local midnight.
+function localDateStr(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function today(){return localDateStr(new Date());}
 function todayDone(){return S.done[today()]||{};}
 function saveTodayDone(d){S.done[today()]=d;saveState();}
 
@@ -1133,7 +1137,7 @@ function maybeSpawnWeed(){
   if(S.lastWeedCheck===t) return;
   S.lastWeedCheck=t;
   const y=new Date();y.setDate(y.getDate()-1);
-  const yStr=y.toISOString().slice(0,10);
+  const yStr=localDateStr(y);
   const missedYesterday=!!S.startDate&&yStr>=S.startDate&&!S.completedDays[yStr];
   const chance=missedYesterday?0.65:0.15;
   if(Math.random()<chance) spawnWeed();
@@ -2212,7 +2216,7 @@ function renderWeek(){
   const t=today();
   for(let i=13;i>=0;i--){
     const d=new Date();d.setDate(d.getDate()-i);
-    const ds=d.toISOString().slice(0,10);
+    const ds=localDateStr(d);
     const lbl=['S','M','T','W','T','F','S'][d.getDay()];
     const comp=S.completedDays[ds];
     let cls='day-dot',inner=lbl;
