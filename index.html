@@ -246,7 +246,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .reader-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border);}
 .reader-ref{font-family:var(--serif);font-size:17px;font-weight:700;color:var(--green);}
 .reader-close{background:none;border:none;font-size:18px;color:var(--text3);cursor:pointer;padding:4px;}
-.reader-body{flex:1;overflow-y:auto;padding:1.5rem 1.5rem 1rem;display:flex;align-items:center;justify-content:center;}
+.reader-body{flex:1;overflow-y:auto;padding:1.5rem 1.5rem 1rem;display:flex;align-items:flex-start;justify-content:center;touch-action:pan-y;}
 .reader-loading{font-size:13px;color:var(--text3);}
 .reader-page{max-width:520px;}
 .reader-page p{font-family:var(--serif);font-size:19px;line-height:1.85;color:var(--text);margin-bottom:1.1rem;}
@@ -259,6 +259,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .reader-dot.active{background:var(--green);}
 .reader-footer{padding:0.75rem 1.25rem 1.25rem;text-align:center;}
 .reader-listen{background:none;border:1px solid var(--border2);border-radius:20px;padding:8px 16px;font-size:13px;color:var(--text2);cursor:pointer;}
+
+/* SMALL TOGGLE SWITCH */
+.switch{position:relative;display:inline-block;width:36px;height:21px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;}
+.switch-slider{position:absolute;inset:0;background:var(--border2);border-radius:21px;transition:background 0.15s;cursor:pointer;}
+.switch-slider::before{content:'';position:absolute;width:15px;height:15px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform 0.15s;box-shadow:0 1px 2px rgba(0,0,0,0.25);}
+.switch input:checked+.switch-slider{background:var(--green);}
+.switch input:checked+.switch-slider::before{transform:translateX(15px);}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -325,7 +333,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <div class="reader-ref" id="readerRef">Reading</div>
     <button class="reader-close" onclick="closeReader()" aria-label="Close">✕</button>
   </div>
-  <div class="reader-body">
+  <div class="reader-body" id="readerBody">
     <div class="reader-loading" id="readerLoading">Loading…</div>
     <div class="reader-page" id="readerPage" style="display:none"></div>
   </div>
@@ -394,6 +402,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;" id="planCardRows"></div>
         <div id="planTheme" style="font-size:12px;color:var(--text3);margin-top:8px;font-style:italic;font-family:var(--serif);line-height:1.5;"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);" onclick="event.stopPropagation()">
+          <div style="font-size:11px;color:var(--text3);line-height:1.4;">📌 Catch-up mode<br><span style="opacity:0.85;">Hold on my last unfinished day instead of moving ahead</span></div>
+          <label class="switch"><input type="checkbox" id="sequentialModeToggle" onchange="toggleSequentialMode(this.checked)"><span class="switch-slider"></span></label>
+        </div>
       </div>
 
       <div id="focusPanel" class="focus-panel">
@@ -957,6 +969,7 @@ function loadState(){
     if(!parsed.bgTrees) parsed.bgTrees=['Olive Tree','Cedar','Palm Tree'];
     if(!parsed.giftLog) parsed.giftLog=[];
     if(!parsed.friends) parsed.friends=[];
+    if(parsed.sequentialMode===undefined) parsed.sequentialMode=false;
     return parsed;
   }
   return{
@@ -970,6 +983,10 @@ function loadState(){
     gardenTrees:[],weeds:[],lastWeedCheck:null,treeMonthRecorded:1,
     bgTrees:['Olive Tree','Cedar','Palm Tree'],
     giftLog:[],friends:[],
+    // Off by default — the reading plan always shows today's actual day so
+    // missing a day never makes anyone feel like they have to catch up. When
+    // on, it instead holds at the earliest day not yet completed.
+    sequentialMode:false,
   };
 }
 let S=loadState();
@@ -1703,8 +1720,13 @@ function gardenAction(type){
 // ─── READING PLAN CARD ───────────────────────────────────────────────────────
 function renderReadingCard(){
   const plan = getTodayPlan();
-  document.getElementById('planDayBadge').textContent = 'Day '+plan.day;
+  const diff=S.startDate?Math.floor((new Date(today())-new Date(S.startDate))/86400000):0;
+  const calendarDay=Math.min(diff+1,365);
+  const behind=S.sequentialMode&&plan.day<calendarDay;
+  document.getElementById('planDayBadge').textContent = 'Day '+plan.day+(behind?' · catching up':'');
   document.getElementById('planTheme').textContent = plan.theme;
+  const toggle=document.getElementById('sequentialModeToggle');
+  if(toggle) toggle.checked=!!S.sequentialMode;
   const rows = [
     {icon:'📖', label:'NT', book:plan.nt.book, chapter:plan.nt.chapter, ref: planRef(plan.nt), color:'var(--green-text)', bg:'var(--green-bg)', border:'rgba(74,124,89,0.15)'},
     {icon:'📜', label:'OT', book:plan.ot.book, chapter:plan.ot.chapter, ref: planRef(plan.ot), color:'var(--text2)',      bg:'var(--surface2)', border:'var(--border)'},
@@ -1717,6 +1739,13 @@ function renderReadingCard(){
       <span style="font-size:14px;font-weight:600;color:var(--text)">${r.ref}</span>
       <span style="margin-left:auto;font-size:12px;color:var(--text3)">Read →</span>
     </div>`).join('');
+}
+function toggleSequentialMode(on){
+  S.sequentialMode=on;
+  saveState();
+  recalcDay();
+  renderReadingCard();
+  showToast(on?'📌 Catch-up mode on — reading will hold on your last unfinished day.':'📅 Reading will always show today.');
 }
 
 // ─── BIBLE READER (KJV) ───────────────────────────────────────────────────────
@@ -1779,6 +1808,23 @@ function closeReader(){
   stopReadAloud();
   readerState=null;
 }
+// Swipe left/right to change page, without hijacking normal vertical
+// scrolling on a passage taller than the screen.
+(function initReaderSwipe(){
+  const body=document.getElementById('readerBody');
+  if(!body) return;
+  let sx=0,sy=0,tracking=false;
+  body.addEventListener('touchstart',e=>{
+    if(e.touches.length!==1) return;
+    sx=e.touches[0].clientX;sy=e.touches[0].clientY;tracking=true;
+  },{passive:true});
+  body.addEventListener('touchend',e=>{
+    if(!tracking) return;
+    tracking=false;
+    const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+    if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5) readerGo(dx<0?1:-1);
+  },{passive:true});
+})();
 // Read-to-me — Bible reading only, using the browser's built-in speech
 // synthesis (no backend, no cost, works fully offline once the page is loaded).
 function toggleReadAloud(){
@@ -2331,10 +2377,30 @@ function showToast(msg){
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
+// The reading day a strict sequential reader should be on: the earliest day
+// (by number, 1-based from S.startDate) whose date isn't in S.completedDays
+// yet. Never runs ahead of the actual calendar day — today's own entry
+// naturally comes back as "not completed yet" until it's done, same as
+// normal mode, so this only ever lags behind, holding on a missed day
+// instead of skipping past it.
+function computeSequentialDay(calendarDay){
+  // Parsed as local components, NOT `new Date(S.startDate)` — the browser
+  // reads a bare "YYYY-MM-DD" string as UTC midnight, which then silently
+  // lands on the wrong local calendar day once setDate()/localDateStr()
+  // (both local-timezone) get applied on top of it.
+  const [sy,sm,sd]=S.startDate.split('-').map(Number);
+  const start=new Date(sy,sm-1,sd);
+  for(let n=1;n<calendarDay;n++){
+    const d=new Date(start);d.setDate(d.getDate()+(n-1));
+    if(!S.completedDays[localDateStr(d)]) return n;
+  }
+  return calendarDay;
+}
 function recalcDay(){
   if(!S.startDate)return;
   const diff=Math.floor((new Date(today())-new Date(S.startDate))/86400000);
-  S.currentDay=Math.min(diff+1,365);
+  const calendarDay=Math.min(diff+1,365);
+  S.currentDay=S.sequentialMode?computeSequentialDay(calendarDay):calendarDay;
 }
 
 function initApp(){
