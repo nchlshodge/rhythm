@@ -995,6 +995,20 @@ function saveState(){localStorage.setItem('rhythm_v1',JSON.stringify(S));}
 // formats in UTC and would roll the day over at UTC midnight instead of
 // wherever the user actually is, hours off from their real local midnight.
 function localDateStr(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
+// Escape any string headed into innerHTML — usernames, friend nicknames, and
+// reflections all originate from user/attacker-controlled input (Supabase
+// profiles are settable by anyone, gift links are raw URL params), so none
+// of it can be trusted verbatim.
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+// For text embedded inside a single-quoted JS string literal that itself
+// sits inside an HTML attribute (e.g. onclick='...'), so it's safe against
+// both breaking out of the JS string and breaking out of the attribute.
+function escapeJsAttr(s){
+  return escapeHtml(String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
+}
 function today(){return localDateStr(new Date());}
 function todayDone(){return S.done[today()]||{};}
 function saveTodayDone(d){S.done[today()]=d;saveState();}
@@ -2024,6 +2038,10 @@ function checkForIncomingGift(){
   params.delete('gift');
   history.replaceState({},'',location.pathname+(params.toString()?'?'+params.toString():'')+location.hash);
   if(!payload) return;
+  // payload.f is a raw, fully attacker-controlled URL param (anyone can craft
+  // a ?gift= link by hand) — currently only ever shown via showToast(), which
+  // uses textContent and is safe. If a future feature renders sh.gift.from
+  // anywhere via innerHTML, it MUST go through escapeHtml() first.
   const entry={index:S.sheep, from:payload.f||null};
   if(payload.t==='special') entry.special=payload.s;
   else if(payload.t==='color') entry.artIndex=payload.i;
@@ -2061,7 +2079,7 @@ function renderAccountUI(){
   if(!el) return;
   if(currentUser){
     el.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:0.75rem;border-bottom:1px solid var(--border);">
-      <span style="font-size:13px;color:var(--text);">Signed in as <strong>${currentUsername||'you'}</strong></span>
+      <span style="font-size:13px;color:var(--text);">Signed in as <strong>${escapeHtml(currentUsername||'you')}</strong></span>
       <button onclick="signOutAccount()" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;">Sign out</button>
     </div>`;
   } else {
@@ -2100,9 +2118,9 @@ async function searchFriendCandidates(q){
     const filtered=rows.filter(r=>r.id!==currentUser.id);
     results.innerHTML = filtered.length ? filtered.map(r=>`
       <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border-radius:10px;padding:8px 10px;">
-        <span style="font-size:13px;color:var(--text);">${r.username}</span>
-        <button onclick="sendFriendRequestReal('${r.id}','${r.username.replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--green);font-size:12px;cursor:pointer;">+ Add</button>
-      </div>`).join('') : `<div class="empty-state">No users found for "${q}"</div>`;
+        <span style="font-size:13px;color:var(--text);">${escapeHtml(r.username)}</span>
+        <button onclick="sendFriendRequestReal('${escapeJsAttr(r.id)}','${escapeJsAttr(r.username)}')" style="background:none;border:none;color:var(--green);font-size:12px;cursor:pointer;">+ Add</button>
+      </div>`).join('') : `<div class="empty-state">No users found for "${escapeHtml(q)}"</div>`;
   }catch(e){ results.innerHTML='<div class="empty-state">Search failed.</div>'; }
 }
 async function sendFriendRequestReal(friendId, friendUsername){
@@ -2138,10 +2156,10 @@ async function renderFriendsList(){
     }
     wrap.innerHTML=S.friends.map(f=>`
       <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border-radius:10px;padding:8px 10px;">
-        <span style="font-size:13px;color:var(--text);">${f.name}</span>
+        <span style="font-size:13px;color:var(--text);">${escapeHtml(f.name)}</span>
         <span style="display:flex;gap:10px;align-items:center;">
-          <button onclick="sendGiftFromModal('${f.name.replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--green);font-size:12px;cursor:pointer;padding:0;">Send</button>
-          <button onclick="removeFriend(${f.id})" aria-label="Remove ${f.name}" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:0;">✕</button>
+          <button onclick="sendGiftFromModal('${escapeJsAttr(f.name)}')" style="background:none;border:none;color:var(--green);font-size:12px;cursor:pointer;padding:0;">Send</button>
+          <button onclick="removeFriend(${f.id})" aria-label="Remove ${escapeHtml(f.name)}" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:0;">✕</button>
         </span>
       </div>`).join('');
     return;
@@ -2161,7 +2179,7 @@ async function renderFriendsList(){
     let html='';
     incoming.forEach(f=>{
       html+=`<div style="display:flex;align-items:center;justify-content:space-between;background:var(--gold-bg);border-radius:10px;padding:8px 10px;">
-        <span style="font-size:13px;color:var(--gold-text);">${nameOf(f.user_id)} wants to be friends</span>
+        <span style="font-size:13px;color:var(--gold-text);">${escapeHtml(nameOf(f.user_id))} wants to be friends</span>
         <span style="display:flex;gap:8px;">
           <button onclick="acceptFriendRequestReal(${f.id})" style="background:none;border:none;color:var(--green);font-size:12px;cursor:pointer;">Accept</button>
           <button onclick="declineFriendRequestReal(${f.id})" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;">✕</button>
@@ -2171,8 +2189,8 @@ async function renderFriendsList(){
     accepted.forEach(f=>{
       const otherId=f.user_id===currentUser.id?f.friend_id:f.user_id;
       html+=`<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border-radius:10px;padding:8px 10px;">
-        <span style="font-size:13px;color:var(--text);">${nameOf(otherId)}</span>
-        <button onclick="sendGiftFromModal(null,'${otherId}','${nameOf(otherId).replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--green);font-size:12px;cursor:pointer;">Send</button>
+        <span style="font-size:13px;color:var(--text);">${escapeHtml(nameOf(otherId))}</span>
+        <button onclick="sendGiftFromModal(null,'${escapeJsAttr(otherId)}','${escapeJsAttr(nameOf(otherId))}')" style="background:none;border:none;color:var(--green);font-size:12px;cursor:pointer;">Send</button>
       </div>`;
     });
     wrap.innerHTML = html || '<div class="empty-state">No friends yet — search by username above.</div>';
@@ -2353,7 +2371,7 @@ function saveReflect(){
 function renderReflections(){
   const el=document.getElementById('pastReflections');
   if(!S.reflections.length){el.innerHTML='<div class="empty-state">No reflections yet — your first one is waiting above.</div>';return;}
-  el.innerHTML=S.reflections.map(r=>`<div class="past-item"><div class="past-date">${r.date}</div><div class="past-text">${r.text}</div></div>`).join('');
+  el.innerHTML=S.reflections.map(r=>`<div class="past-item"><div class="past-date">${escapeHtml(r.date)}</div><div class="past-text">${escapeHtml(r.text)}</div></div>`).join('');
 }
 
 // ─── TABS ─────────────────────────────────────────────────────────────────────
