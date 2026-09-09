@@ -268,7 +268,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .switch input:checked+.switch-slider{background:var(--green);}
 .switch input:checked+.switch-slider::before{transform:translateX(15px);}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0" integrity="sha384-JBR+x8blGwjDRO63aHCGiZMD4VNiTR4ZUGA+N6ZKLf3zNt1fK8IBpcgPaMrxqWBp" crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -592,7 +592,13 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 let authToken = localStorage.getItem('rhythm_token') || null;
 let refreshToken = localStorage.getItem('rhythm_refresh_token') || null;
-let currentUser = JSON.parse(localStorage.getItem('rhythm_user') || 'null');
+let currentUser = (()=>{
+  // Same failure mode as loadState() below: an uncaught parse error this
+  // early (before anything else has run) would silently blank the whole
+  // app rather than just treating it as "not signed in".
+  try{ return JSON.parse(localStorage.getItem('rhythm_user') || 'null'); }
+  catch(e){ return null; }
+})();
 let currentUsername = localStorage.getItem('rhythm_username') || null;
 let tokenRefreshInterval = null;
 
@@ -961,7 +967,18 @@ function renderDevotional(){
 function loadState(){
   const s=localStorage.getItem('rhythm_v1');
   if(s){
-    const parsed=JSON.parse(s);
+    let parsed;
+    try{ parsed=JSON.parse(s); }
+    catch(e){
+      // Corrupted save data would otherwise throw here uncaught, at
+      // top-level page load, before anything else has a chance to run —
+      // silently bricking the whole app with no recovery path. Preserve
+      // the unreadable data under a different key (in case it's ever worth
+      // investigating) and fall through to a fresh default state instead.
+      console.warn('Saved state was corrupted, starting fresh:', e?.message);
+      try{ localStorage.setItem('rhythm_v1_corrupted_'+Date.now(), s); }catch(e2){}
+      return loadState.defaults();
+    }
     if(!parsed.gardenTrees) parsed.gardenTrees=[];
     if(!parsed.weeds) parsed.weeds=[];
     if(parsed.lastWeedCheck===undefined) parsed.lastWeedCheck=null;
@@ -972,6 +989,9 @@ function loadState(){
     if(parsed.sequentialMode===undefined) parsed.sequentialMode=false;
     return parsed;
   }
+  return loadState.defaults();
+}
+loadState.defaults=function(){
   return{
     onboarded:false,focus:null,startDate:null,currentDay:1,
     streak:0,sabbathRests:0,streakTowardSabbath:0,
@@ -988,7 +1008,7 @@ function loadState(){
     // on, it instead holds at the earliest day not yet completed.
     sequentialMode:false,
   };
-}
+};
 let S=loadState();
 function saveState(){localStorage.setItem('rhythm_v1',JSON.stringify(S));}
 // Local calendar date (device's own timezone), NOT toISOString() — that
