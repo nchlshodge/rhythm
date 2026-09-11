@@ -1946,7 +1946,21 @@ function closeFocus(){clearInterval(timerInterval);timerRunning=false;document.g
 function markDone(){
   if(activePractice){
     const done=todayDone();done[activePractice.id]=true;saveTodayDone(done);
-    if(activePractice.id==='scripture') tickRestChallenge('psalm7');
+    if(activePractice.id==='scripture'){
+      tickRestChallenge('psalm7');
+      // In catch-up mode the reading shown (and just marked complete) is
+      // often from an earlier missed day, not literally today — that day's
+      // own record needs the flag too, or computeSequentialDay() would
+      // never see it as done and the pin could never advance, no matter
+      // how many times "Mark complete" gets pressed.
+      if(S.sequentialMode&&S.startDate){
+        const planDate=dateForPlanDay(S.currentDay);
+        if(planDate!==today()){
+          const pd=S.done[planDate]||{};pd.scripture=true;S.done[planDate]=pd;saveState();
+        }
+      }
+      recalcDay();renderReadingCard();
+    }
   }
   closeFocus();renderPractices();renderChallenges();
 }
@@ -2416,21 +2430,27 @@ function showToast(msg){
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 // The reading day a strict sequential reader should be on: the earliest day
-// (by number, 1-based from S.startDate) whose date isn't in S.completedDays
-// yet. Never runs ahead of the actual calendar day — today's own entry
-// naturally comes back as "not completed yet" until it's done, same as
-// normal mode, so this only ever lags behind, holding on a missed day
-// instead of skipping past it.
-function computeSequentialDay(calendarDay){
-  // Parsed as local components, NOT `new Date(S.startDate)` — the browser
-  // reads a bare "YYYY-MM-DD" string as UTC midnight, which then silently
-  // lands on the wrong local calendar day once setDate()/localDateStr()
-  // (both local-timezone) get applied on top of it.
+// (by number, 1-based from S.startDate) whose Scripture reading practice
+// isn't marked done yet — not S.completedDays, which needs ALL FIVE daily
+// practices (prayer, gratitude, memory, examen too), so it wouldn't budge
+// just because someone hit "Mark complete" on the reading itself. Never
+// runs ahead of the actual calendar day — today's own entry naturally comes
+// back as "not done yet" until it is, same as normal mode, so this only
+// ever lags behind, holding on a missed day instead of skipping past it.
+// The actual calendar date a given reading-plan day number falls on. Parsed
+// as local components, NOT `new Date(S.startDate)` — the browser reads a
+// bare "YYYY-MM-DD" string as UTC midnight, which then silently lands on
+// the wrong local calendar day once setDate()/localDateStr() (both
+// local-timezone) get applied on top of it.
+function dateForPlanDay(n){
   const [sy,sm,sd]=S.startDate.split('-').map(Number);
-  const start=new Date(sy,sm-1,sd);
+  const d=new Date(sy,sm-1,sd);
+  d.setDate(d.getDate()+(n-1));
+  return localDateStr(d);
+}
+function computeSequentialDay(calendarDay){
   for(let n=1;n<calendarDay;n++){
-    const d=new Date(start);d.setDate(d.getDate()+(n-1));
-    if(!S.completedDays[localDateStr(d)]) return n;
+    if(!S.done[dateForPlanDay(n)]?.scripture) return n;
   }
   return calendarDay;
 }
