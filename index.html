@@ -1098,9 +1098,33 @@ let treeAnimReq=null;
 let waterDrops=[],sunRays=0,praySparkles=[],weedBursts=[];
 
 // A bluebird that occasionally flies across the tree scene — purely decorative,
-// on its own random timer independent of anything the user does.
-let birdState={active:false,x:0,y:0,dir:1,speed:1,flapT:0,cooldown:Math.floor(200+Math.random()*400)};
-function updateAndDrawBird(ctx,W,H){
+// on its own random timer independent of anything the user does. Sometimes
+// it just flies straight across; sometimes it swoops down to peck around on
+// the ground, or (once the tree has real canopy) lands and perches in it.
+let birdState={active:false,x:0,y:0,dir:1,speed:1,flapT:0,mode:'cruise',plan:'flyby',cooldown:Math.floor(200+Math.random()*400)};
+function drawBirdFlying(ctx,b){
+  const img=getImagePart(Math.sin(b.flapT)>0?'bird/flap1.png':'bird/flap2.png');
+  if(!img)return;
+  const drawW=42*devicePixelRatio,drawH=drawW*(img.naturalHeight/img.naturalWidth||1);
+  ctx.save();
+  ctx.translate(b.x,b.y);
+  ctx.scale(-b.dir,1); // the source art faces left, so rightward travel needs the flip
+  ctx.drawImage(img,-drawW/2,-drawH/2,drawW,drawH);
+  ctx.restore();
+}
+function drawBirdPerched(ctx,b,dipPx){
+  const img=getImagePart('bird/sit1.png');
+  if(!img)return;
+  const drawW=38*devicePixelRatio,drawH=drawW*(img.naturalHeight/img.naturalWidth||1);
+  ctx.save();
+  ctx.translate(b.x,b.y+(dipPx||0));
+  ctx.scale(-b.dir,1);
+  ctx.drawImage(img,-drawW/2,-drawH,drawW,drawH); // feet anchored at the translate point
+  ctx.restore();
+}
+// treeInfo (optional): {cx, cy, size, stage} for the tree currently on screen,
+// so a bird choosing to perch lands somewhere within its actual canopy.
+function updateAndDrawBird(ctx,W,gndY,treeInfo){
   const b=birdState;
   if(!b.active){
     b.cooldown--;
@@ -1108,26 +1132,89 @@ function updateAndDrawBird(ctx,W,H){
       b.active=true;
       b.dir=Math.random()<0.5?1:-1;
       b.x=b.dir===1?-W*0.1:W*1.1;
-      b.y=H*(0.08+Math.random()*0.3);
+      b.cruiseY=gndY*(0.08+Math.random()*0.3);
+      b.y=b.cruiseY;
       b.speed=(1+Math.random()*0.8)*devicePixelRatio;
       b.flapT=Math.random()*Math.PI*2;
+      b.mode='cruise';
+      const canPerch=!!treeInfo&&treeInfo.stage>=2;
+      const r=Math.random();
+      b.plan=(canPerch&&r<0.25)?'tree':(r<0.55?'ground':'flyby');
+      b.triggerX=W*(0.38+Math.random()*0.24);
     }
     return;
   }
-  b.x+=b.dir*b.speed;
-  b.flapT+=0.15;
-  const img=getImagePart(Math.sin(b.flapT)>0?'bird/flap1.png':'bird/flap2.png');
-  if(img){
-    const drawW=42*devicePixelRatio,drawH=drawW*(img.naturalHeight/img.naturalWidth||1);
-    ctx.save();
-    ctx.translate(b.x,b.y+Math.sin(b.flapT*0.5)*6*devicePixelRatio);
-    ctx.scale(b.dir,1);
-    ctx.drawImage(img,-drawW/2,-drawH/2,drawW,drawH);
-    ctx.restore();
+
+  if(b.mode==='cruise'){
+    b.x+=b.dir*b.speed;
+    b.flapT+=0.15;
+    drawBirdFlying(ctx,b);
+    if(b.plan!=='flyby'&&((b.dir===1&&b.x>=b.triggerX)||(b.dir===-1&&b.x<=b.triggerX))){
+      b.swoopFromX=b.x;b.swoopFromY=b.y;
+      if(b.plan==='tree'){
+        b.swoopToX=treeInfo.cx+(Math.random()-0.5)*treeInfo.size*0.32;
+        // Tree art is drawn at a fixed square "size" much taller than the
+        // canvas and gets clipped at the top for a mature tree, so a canopy
+        // position relative to `size` can land off-screen. Empirically
+        // calibrated against gndY (the actual visible canvas height)
+        // instead — lands within the upper canopy for both a young sapling
+        // and a full mature tree.
+        b.swoopToY=treeInfo.cy*0.39;
+      } else {
+        b.swoopToX=b.x+b.dir*W*0.05;
+        b.swoopToY=gndY;
+      }
+      b.swoopT=0;b.swoopDur=36+Math.random()*16;
+      b.mode='toTarget';
+      return;
+    }
+    if((b.dir===1&&b.x>W*1.1)||(b.dir===-1&&b.x<-W*0.1)){
+      b.active=false;
+      b.cooldown=Math.floor(400+Math.random()*1400);
+    }
+    return;
   }
-  if((b.dir===1&&b.x>W*1.1)||(b.dir===-1&&b.x<-W*0.1)){
-    b.active=false;
-    b.cooldown=Math.floor(400+Math.random()*1400);
+
+  if(b.mode==='toTarget'||b.mode==='depart'){
+    b.swoopT+=1/b.swoopDur;
+    const t=Math.min(1,b.swoopT),ease=t*t*(3-2*t);
+    b.x=b.swoopFromX+(b.swoopToX-b.swoopFromX)*ease;
+    b.y=b.swoopFromY+(b.swoopToY-b.swoopFromY)*ease;
+    b.flapT+=0.28;
+    drawBirdFlying(ctx,b);
+    if(t>=1){
+      if(b.mode==='toTarget'){
+        b.mode=b.plan==='tree'?'onTree':'onGround';
+        b.landTimer=Math.floor(100+Math.random()*120);
+        b.peckT=0;
+      } else {
+        // Landing's done for this pass — without this, the very next
+        // 'cruise' tick would still be past triggerX and immediately
+        // swoop right back down to the same spot, forever.
+        b.plan='flyby';
+        b.mode='cruise';
+      }
+    }
+    return;
+  }
+
+  if(b.mode==='onGround'||b.mode==='onTree'){
+    b.landTimer--;
+    let dip=0;
+    if(b.mode==='onGround'){
+      b.peckT++;
+      const ph=b.peckT%55;
+      if(ph<10) dip=Math.sin(ph/10*Math.PI)*5*devicePixelRatio;
+    }
+    drawBirdPerched(ctx,b,dip);
+    if(b.landTimer<=0){
+      b.swoopFromX=b.x;b.swoopFromY=b.y;
+      b.swoopToX=b.x+b.dir*W*0.05;
+      b.swoopToY=b.cruiseY;
+      b.swoopT=0;b.swoopDur=36+Math.random()*16;
+      b.mode='depart';
+    }
+    return;
   }
 }
 
@@ -1431,14 +1518,15 @@ function drawTreeScene(){
     ctx.beginPath();ctx.moveTo(p.x,p.y-4);ctx.lineTo(p.x,p.y+4);ctx.stroke();
   });
 
-  // BLUEBIRD
-  updateAndDrawBird(ctx,W,gndY);
-
   // TREE
   const day=getTreeDayInMonth();
   const stage=getTreeStage(day);
   const type=getTreeType(getMonthsSinceStart());
   drawTreeAtStage(ctx,W/2,gndY,W*0.66,type,stage);
+
+  // BLUEBIRD — drawn after the tree so a perched bird sits on top of the
+  // canopy instead of being hidden behind it.
+  updateAndDrawBird(ctx,W,gndY,{cx:W/2,cy:gndY,size:W*0.66,stage});
 
   // WEEDS
   drawWeeds(ctx,W,H,gndY);
