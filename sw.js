@@ -1,7 +1,7 @@
-// Bump this on every deploy that touches index.html — it's what forces
-// already-cached visitors (this app is actively iterated on multiple times
-// a day) off stale, possibly-vulnerable copies of the app shell.
-const CACHE = 'rhythm-v2';
+// Bump this on every deploy that touches index.html or this file — it's what
+// forces already-cached visitors (this app is actively iterated on multiple
+// times a day) off stale, possibly-vulnerable copies of the app shell.
+const CACHE = 'rhythm-v3';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -41,4 +41,34 @@ self.addEventListener('fetch', e => {
       return res;
     }).catch(() => cached))
   );
+});
+
+// Scheduled reminders — a server-sent Web Push, not a local timer, since
+// Rhythm should still remind you even if it hasn't been opened in a while.
+self.addEventListener('push', e => {
+  let payload = {};
+  try { payload = e.data ? e.data.json() : {}; } catch (err) { payload = { body: e.data ? e.data.text() : '' }; }
+  const title = payload.title || 'Rhythm';
+  const options = {
+    body: payload.body || '',
+    icon: payload.icon || 'icon-192.png',
+    badge: payload.icon || 'icon-192.png',
+    tag: payload.tag || 'rhythm-reminder',
+    data: payload.data || {},
+  };
+  e.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const targetUrl = (e.notification.data && e.notification.data.url) || './';
+  e.waitUntil((async () => {
+    const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of allClients) {
+      if (new URL(client.url).origin === self.location.origin && 'focus' in client) {
+        return client.focus();
+      }
+    }
+    return self.clients.openWindow(targetUrl);
+  })());
 });

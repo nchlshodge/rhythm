@@ -353,6 +353,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <div class="top-bar">
       <div class="app-name">Rhythm.</div>
       <div class="top-pills">
+        <div class="pill pill-streak" onclick="openRemindersModal()" aria-label="Reminders">🔔</div>
         <div class="pill pill-gold" onclick="showSabbathModal()">☀️ <span id="sabbathCount">0</span></div>
         <div class="pill pill-streak">🔥 <span id="streakNum">0</span></div>
       </div>
@@ -565,6 +566,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
     <div class="modal-btns">
       <button class="btn-secondary" onclick="closeGiftModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- REMINDERS MODAL -->
+<div class="modal-back" id="remindersModal" onclick="if(event.target===this)closeRemindersModal()">
+  <div class="modal" style="max-width:380px;text-align:left;">
+    <h3 style="text-align:center;">🔔 Reminders</h3>
+    <p style="text-align:center;">Get a notification at the times you choose — sent from Rhythm's server, so it still reaches you even when the app isn't open.</p>
+    <div id="remindersBody"></div>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeRemindersModal()">Close</button>
     </div>
   </div>
 </div>
@@ -2226,6 +2239,153 @@ function removeFriend(id){
   saveState();
   renderFriendsList();
 }
+// ─── REMINDERS (scheduled push notifications) ─────────────────────────────
+// Server-sent, not a local setTimeout — a Supabase cron job checks everyone's
+// chosen times every minute and pushes via Web Push, so a reminder still
+// arrives even if Rhythm hasn't been opened in days. Requires sign-in, since
+// the schedule (rhythm_reminders) and the subscription (the shared
+// push_subscriptions table) are both stored per-account, not per-device.
+const RHYTHM_VAPID_PUBLIC_KEY = 'BMDF0oYZSv5_QlPdJeVkklYmcv6OK0fQF0GfDZChyNBvC4d2CGkpXznsf7fidYEq4bcQioWwXK_15Pp19ODxU0s';
+function urlBase64ToUint8Array(base64String){
+  const padding='='.repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const rawData=atob(base64);
+  const out=new Uint8Array(rawData.length);
+  for(let i=0;i<rawData.length;i++) out[i]=rawData.charCodeAt(i);
+  return out;
+}
+function pushSupported(){ return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
+let reminderPrefs={enabled:false,times:[],timezone:Intl.DateTimeFormat().resolvedOptions().timeZone};
+let reminderSubscribed=false; // whether THIS browser/device currently holds a live push subscription
+async function loadReminderPrefs(){
+  if(!currentUser) return;
+  try{
+    const rows=await sbFetch(`rhythm_reminders?user_id=eq.${currentUser.id}&select=enabled,times,timezone`);
+    if(rows.length) reminderPrefs={enabled:!!rows[0].enabled,times:rows[0].times||[],timezone:rows[0].timezone||reminderPrefs.timezone};
+  }catch(e){ console.warn('Could not load reminder prefs:', e?.message); }
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.getSubscription();
+    reminderSubscribed=!!sub;
+  }catch(e){ reminderSubscribed=false; }
+}
+async function saveReminderPrefs(){
+  if(!currentUser) return;
+  reminderPrefs.timezone=Intl.DateTimeFormat().resolvedOptions().timeZone;
+  try{
+    await sbFetch('rhythm_reminders', {
+      method:'POST',
+      headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({user_id:currentUser.id, enabled:reminderPrefs.enabled, times:reminderPrefs.times, timezone:reminderPrefs.timezone}),
+    });
+  }catch(e){ showToast('Could not save — has the reminders table been set up yet?'); }
+}
+async function subscribeToPush(){
+  if(!pushSupported()){ showToast("Reminders aren't supported on this device."); return false; }
+  const perm=await Notification.requestPermission();
+  if(perm!=='granted'){ showToast('Notification permission was not granted.'); return false; }
+  const reg=await navigator.serviceWorker.ready;
+  let sub=await reg.pushManager.getSubscription();
+  if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:urlBase64ToUint8Array(RHYTHM_VAPID_PUBLIC_KEY)});
+  const json=sub.toJSON();
+  try{
+    await sbFetch('push_subscriptions', {
+      method:'POST',
+      headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({user_id:currentUser.id, platform:'web', endpoint:json.endpoint, p256dh:json.keys.p256dh, auth:json.keys.auth}),
+    });
+  }catch(e){ showToast('Could not save this device — has the backend been set up yet?'); return false; }
+  reminderSubscribed=true;
+  return true;
+}
+async function unsubscribeFromPush(){
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.getSubscription();
+    if(sub){
+      await sbFetch(`push_subscriptions?endpoint=eq.${encodeURIComponent(sub.endpoint)}`, {method:'DELETE'});
+      await sub.unsubscribe();
+    }
+  }catch(e){ console.warn('Unsubscribe failed:', e?.message); }
+  reminderSubscribed=false;
+}
+async function toggleReminders(on){
+  if(on){
+    const ok=await subscribeToPush();
+    if(!ok){ renderRemindersBody(); return; }
+    reminderPrefs.enabled=true;
+    if(!reminderPrefs.times.length) reminderPrefs.times=['07:00'];
+    await saveReminderPrefs();
+    showToast('🔔 Reminders on.');
+  } else {
+    reminderPrefs.enabled=false;
+    await saveReminderPrefs();
+    showToast('Reminders off.');
+  }
+  renderRemindersBody();
+}
+function addReminderTime(){
+  const input=document.getElementById('reminderTimeInput');
+  const v=input.value;
+  if(!v) return;
+  if(!reminderPrefs.times.includes(v)){
+    reminderPrefs.times.push(v);
+    reminderPrefs.times.sort();
+    saveReminderPrefs();
+  }
+  input.value='';
+  renderRemindersBody();
+}
+function removeReminderTime(t){
+  reminderPrefs.times=reminderPrefs.times.filter(x=>x!==t);
+  saveReminderPrefs();
+  renderRemindersBody();
+}
+function renderRemindersBody(){
+  const el=document.getElementById('remindersBody');
+  if(!el) return;
+  if(!currentUser){
+    el.innerHTML=`<p style="font-size:13px;color:var(--text3);text-align:center;margin:0.5rem 0 1rem;">Sign in to set reminder times.</p>
+      <button class="btn-primary" onclick="signInWithGoogle()">Sign in with Google</button>`;
+    return;
+  }
+  if(!pushSupported()){
+    el.innerHTML=`<p style="font-size:13px;color:var(--text3);text-align:center;margin:0.5rem 0;">Reminders aren't supported in this browser.</p>`;
+    return;
+  }
+  if(Notification.permission==='denied'){
+    el.innerHTML=`<p style="font-size:13px;color:var(--text3);text-align:center;margin:0.5rem 0;">Notifications are blocked for this site — enable them in your browser's site settings to turn reminders on.</p>`;
+    return;
+  }
+  const chips=reminderPrefs.times.map(t=>`
+    <span style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 8px 6px 14px;font-size:13px;font-weight:600;color:var(--text);">
+      ${escapeHtml(t)}
+      <button onclick="removeReminderTime('${escapeJsAttr(t)}')" aria-label="Remove ${escapeHtml(t)}" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:15px;line-height:1;padding:0 2px;">✕</button>
+    </span>`).join('');
+  const deviceNote=(reminderPrefs.enabled&&!reminderSubscribed)
+    ? `<div style="background:var(--gold-bg);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--gold-text);margin-bottom:0.75rem;">Reminders are on, but not yet set up on this device. <button onclick="subscribeToPush().then(()=>{showToast('🔔 This device is set up.');renderRemindersBody();})" style="background:none;border:none;color:var(--gold-text);font-weight:700;text-decoration:underline;cursor:pointer;padding:0;font-size:12px;">Enable here too</button></div>`
+    : '';
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:0.75rem 0 1rem;">
+      <div style="font-size:14px;font-weight:600;color:var(--text);">Daily reminders</div>
+      <label class="switch"><input type="checkbox" id="remindersToggle" ${reminderPrefs.enabled?'checked':''} onchange="toggleReminders(this.checked)"><span class="switch-slider"></span></label>
+    </div>
+    ${deviceNote}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:0.75rem;">${chips||'<span style="font-size:13px;color:var(--text3);">No times set yet.</span>'}</div>
+    <div style="display:flex;gap:8px;">
+      <input type="time" id="reminderTimeInput" style="flex:1;border:1.5px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:13px;font-family:var(--font);color:var(--text);background:var(--surface);">
+      <button class="btn-secondary" style="width:auto;padding:10px 16px;margin:0;" onclick="addReminderTime()">Add</button>
+    </div>`;
+}
+function openRemindersModal(){
+  document.getElementById('remindersModal').classList.add('show');
+  renderRemindersBody();
+  loadReminderPrefs().then(renderRemindersBody);
+}
+function closeRemindersModal(){
+  document.getElementById('remindersModal').classList.remove('show');
+}
+
 // Real, backend-mediated friends (shared with Scripture Scout) once signed
 // in; a purely local nickname list otherwise. Both paths coexist — signing
 // in never deletes your local list, it's just not what's shown up top.
